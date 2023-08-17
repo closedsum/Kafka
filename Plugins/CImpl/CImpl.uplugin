@@ -1,0 +1,42 @@
+{
+  "FileVersion": 3,
+  "Version": 2,
+  "VersionName": "0.0.1",
+  "FriendlyName": "C Implementation",
+  "Description": "C Implementation",
+  "Category": "Programming",
+  "CreatedBy": "Studio Sai",
+  "CreatedByURL": "",
+  "DocsURL": "",
+  "MarketplaceURL": "",
+  "SupportURL": "",
+  "EngineVersion": "5.1.0",
+  "CanContainContent": true,
+  "Installed": true,
+  "Modules": [
+    {
+      "Name": "CImpl",
+      "Type": "Runtime",
+      "LoadingPhase": "Default"
+    },
+    {
+      "Name": "CImplEditor",
+      "Type": "Editor",
+      "LoadingPhase": "Default"
+    }
+  ],
+  "Plugins": [
+    {
+      "Name": "CsPlugin",
+      "Enabled": true
+    },
+    {
+      "Name": "CsJavascript",
+      "Enabled": true
+    },
+    {
+      "Name": "CsDamage",
+      "Enabled": true
+    }
+  ]
+}
