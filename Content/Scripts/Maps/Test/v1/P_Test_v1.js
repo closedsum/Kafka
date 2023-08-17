@@ -31,10 +31,17 @@ var FunctionLibrary = NJsFunction.FLibrary;
 var checkf = CommonLibrary.checkf;
 var IsNullObject = CommonLibrary.IsNullObject;
 var IsValidObject = CommonLibrary.IsValidObject;
+var IsIntChecked = CommonLibrary.IsIntChecked;
+
+// Constats
+const INDEX_NONE = -1;
 
 // Globals
+var FileShortName = "P_Test_v1";
 /** @type {FJsP_Test_v1_Core} */
 var Core = new FJsCCore();
+/** @type {number} */
+var ScriptIndex = -1;
 
 function compile(source) 
 {
@@ -43,9 +50,12 @@ function compile(source)
 
 function main()
 {
-    console.log("Entry Point - P_Test_v1");
+    console.log("Entry Point - " + FileShortName);
 
-    let context = "Entry Point - P_Test_v1";
+    let context = "Entry Point - " + FileShortName;
+
+    ScriptIndex = Manager_Javascript.GetCurrentScriptIndex();
+    IsIntChecked(context, ScriptIndex);
 
     // Create Coroutine Scheduler
     var CoroutineScheduler = new FJsCoroutineScheduler();
@@ -59,6 +69,7 @@ function main()
     Core.Manager_Time = Manager_Time;
     Core.Coordinator_GameEvent = Coordinator_GameEvent;
     Core.World = World;
+    Core.Manager_Javascript = Manager_Javascript;
     Core.GameState = GameState;
     Core.PlayerController = PlayerController;
     Core.PlayerState = PlayerState;
@@ -85,7 +96,13 @@ function main()
     if (edEngine !== null)
         edEngine.OnEndPIE_Last_ScriptEvent.Add(OnEndPIE);
 
+        // Bind to reload events
+    Manager_Javascript.OnPreReloadScript_ScriptEvent.Add(OnPreReloadScript);
+
     //gs.OnShutdown_ScriptEvent.Add(OnShutdown);
+
+    if (!Manager_Javascript.bScriptReload)
+        FirstInit();
 }
 
 main();
@@ -98,6 +115,11 @@ function CompileClasses()
 function OnUpdate(group, deltaTime)
 {
     Core.CoroutineScheduler.Update(group, deltaTime);
+}
+
+function FirstInit()
+{
+
 }
 
 function OnCreateGamePlayImpl(gamePlayImpl)
@@ -127,22 +149,35 @@ function OnShutdown()
 
 function Shutdown()
 {
-    console.log("Shutdown: P_Hub");
+    console.log("Shutdown: " + FileShortName);
     
+    if (Manager_Time !== null)
+        Manager_Time.OnUpdate_ScriptEvent.Remove(OnUpdate);
+
     let edEngine = CsEdEngine.C(GEngine);
     if (edEngine !== null)
         edEngine.OnEndPIE_Last_ScriptEvent.Remove(OnEndPIE);
+
+    if (Manager_Javascript !== null)
+        Manager_Javascript.OnPreReloadScript_ScriptEvent.Remove(OnPreReloadScript);
 
     Core.Shutdown();
     Core = null;
 }
 
+function OnPreReloadScript(index)
+{
+    if (ScriptIndex == index)
+    {
+        console.log("OnPreReloadScript: " + FileShortName);
+
+        Shutdown();
+    }
+}
+
 function CleanUp()
 {
     console.log("Clean Up");
-    
-    //MyGameState.DoPerformCleanUpOnEditorJavascriptFile = false;
-    //MyGameState.IsRunningEditorJavascriptFile          = false;
 }
 
 // bootstrap to initiate live-reloading dev env.

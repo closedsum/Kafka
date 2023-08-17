@@ -443,7 +443,10 @@ void ACGameState_Test::SetupAndRunScripts()
 	UObject* ContextRoot					  = JavascriptManagerLibrary::GetEngineContextRoot();
 	UCsManager_Javascript* Manager_Javascript = UCsManager_Javascript::Get(ContextRoot);
 
+	Manager_Javascript->SetWorldContext(GetWorld());
+	Manager_Javascript->SetupCallbacks();
 	Manager_Javascript->SetScriptInfo(Info);
+	Manager_Javascript->ConditionalCreateScriptObject();
 
 	typedef NCsCoroutine::NScheduler::FLibrary CoroutineSchedulerLibrary;
 	typedef NCsCoroutine::NPayload::FImpl PayloadType;

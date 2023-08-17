@@ -1,4 +1,4 @@
-/// <reference path="../../Cs/custom_typings/Cs.ts">/>
+/// <reference path="../../../Cs/custom_typings/Cs.ts">/>
 // Game
 /// <reference path="Game/Play/GamePlay_Hub.ts">/>
 // Player
@@ -31,15 +31,15 @@ module.exports = class FJsP_Hub_Core extends FJsCore
         super();
 
         /** @type {NJsCGame.NPlay.FHub} */
-        this.GamePlayImpl_Wrapper = null;
+       // this.GamePlayImpl_Wrapper = null;
         /** @type {NJsCPlayerPawn.FWrapper} */
-        this.PlayerPawn_Wrapper = null;
+        //this.PlayerPawn_Wrapper = null;
     }
 
     Shutdown()
     {
-        this.PlayerPawn_Wrapper.Shutdown();
-        this.GamePlayImpl_Wrapper.Shutdown();
+        //this.PlayerPawn_Wrapper.Shutdown();
+        //this.GamePlayImpl_Wrapper.Shutdown();
 
         super.Shutdown();
     }
@@ -47,10 +47,10 @@ module.exports = class FJsP_Hub_Core extends FJsCore
     /**
     * @returns {NJsCGame.NPlay.FHub}
     */
-    /*NJsCGame.NPlay.FHub*/ GetGamePlayImpl_Wrapper() { return this.GamePlayImpl_Wrapper; }
+    ///*NJsCGame.NPlay.FHub*/ GetGamePlayImpl_Wrapper() { return this.GamePlayImpl_Wrapper; }
 
     /**
     * @returns {NJsCPlayerPawn.FWrapper} 
     */
-    /*NJsCPlayerPawn.FWrapper*/ GetPlayerPawn_Wrapper() { return this.PlayerPawn_Wrapper; }
+    ///*NJsCPlayerPawn.FWrapper*/ GetPlayerPawn_Wrapper() { return this.PlayerPawn_Wrapper; }
 };
