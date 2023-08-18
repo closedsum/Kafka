@@ -15,7 +15,7 @@ var NJsFunction = require('Cs/Library/Library_Function.js');
 // Game
 //var NJsCGame1 = require('Maps/Hub/Game/Play/GamePlay_Hub.js');
 // Player
-//var NJsCPlayerPawn1 = require('CImpl/Player/PlayerPawn_Wrapper.js');
+var NJsCPlayer = require('CImpl/Player/PlayerPawn.js');
 
 // "typedefs" - classes
 /** @type {CommonLibrary} */
@@ -24,13 +24,14 @@ var CommonLibrary = NJsCommon.FLibrary;
 var FunctionLibrary = NJsFunction.FLibrary;
 /** @type {NJsCGame.NPlay.FHub} */
 //var GamePlayImplWrapperType = NJsCGame1.NPlay.FHub;
-/** @type {NJsCPlayerPawn.FWrapper} */
-//var PlayerPawnWrapperType = NJsCPlayerPawn1.FWrapper;
+/** @type {NJsCPlayer.FPawn} */
+var PlayerPawnType = NJsCPlayer.FPawn;
 
 // "typedefs" - functions
 var checkf = CommonLibrary.checkf;
 var IsNullObject = CommonLibrary.IsNullObject;
 var IsValidObject = CommonLibrary.IsValidObject;
+var IsValidObjectChecked = CommonLibrary.IsValidObjectChecked;
 var IsIntChecked = CommonLibrary.IsIntChecked;
 
 // Constats
@@ -101,8 +102,31 @@ function main()
 
     //gs.OnShutdown_ScriptEvent.Add(OnShutdown);
 
-    if (!Manager_Javascript.bScriptReload)
+    let isScriptReload = Manager_Javascript.bScriptReload;
+
+    if (!isScriptReload)
         FirstInit();
+
+    // Player
+    {
+        let CharacterLibrary = CsScriptLibrary_Character
+
+        let tags = [];
+        tags.push("script-" + ScriptIndex);
+        tags.push("player");
+        tags.push("pawn");
+        
+        let c = CharacterLibrary.GetByTags(context, Core.GetWorld(), tags);
+        IsValidObjectChecked(context, c);
+
+        Core.PlayerPawn = c;
+
+        /** @type{NJsCPlayer.FPawn} */ let pp = new PlayerPawnType();
+
+        pp.Init(Core, Core.GetPlayerPawn(), isScriptReload);
+
+        Core.PlayerPawnWrapper = pp;
+    }
 }
 
 main();
@@ -119,7 +143,18 @@ function OnUpdate(group, deltaTime)
 
 function FirstInit()
 {
+    let context = FileShortName + ".FirstInit";
 
+    let CharacterLibrary = CsScriptLibrary_Character;
+
+    /** @type{Character}*/ let c = CharacterLibrary.Spawn(context, Core.GetWorld());
+    
+    let tags = [];
+    tags.push("script-" + ScriptIndex);
+    tags.push("player");
+    tags.push("pawn");
+
+    c.Tags = tags;
 }
 
 function OnCreateGamePlayImpl(gamePlayImpl)
@@ -171,6 +206,7 @@ function OnPreReloadScript(index)
     {
         console.log("OnPreReloadScript: " + FileShortName);
 
+        Core.OnPreReloadScript(index);
         Shutdown();
     }
 }

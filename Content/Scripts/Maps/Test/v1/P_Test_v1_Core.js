@@ -13,6 +13,9 @@ var FJsCore = require("Cs/Core.js");
 // Library
 var NJsCommon = require('Cs/Library/Library_Common.js');
 var NJsFunction = require('Cs/Library/Library_Function.js');
+// Player
+/** @type{NJsCPlayer.FPawn} */
+var PlayerPawnType = require('CImpl/Player/PlayerPawn.js');
 
 // "typedefs" - class
 /** @type {CommonLibrary} */
@@ -32,13 +35,13 @@ module.exports = class FJsP_Hub_Core extends FJsCore
 
         /** @type {NJsCGame.NPlay.FHub} */
        // this.GamePlayImpl_Wrapper = null;
-        /** @type {NJsCPlayerPawn.FWrapper} */
-        //this.PlayerPawn_Wrapper = null;
+        /** @type{NJsCPlayer.FPawn} */ this.PlayerPawnWrapper = null;
     }
 
     Shutdown()
     {
-        //this.PlayerPawn_Wrapper.Shutdown();
+        if (IsValidObject(this.PlayerPawnWrapper))
+            this.PlayerPawnWrapper.Shutdown();
         //this.GamePlayImpl_Wrapper.Shutdown();
 
         super.Shutdown();
@@ -50,7 +53,13 @@ module.exports = class FJsP_Hub_Core extends FJsCore
     ///*NJsCGame.NPlay.FHub*/ GetGamePlayImpl_Wrapper() { return this.GamePlayImpl_Wrapper; }
 
     /**
-    * @returns {NJsCPlayerPawn.FWrapper} 
+    * @returns {NJsCPlayer.FPawn} 
     */
-    ///*NJsCPlayerPawn.FWrapper*/ GetPlayerPawn_Wrapper() { return this.PlayerPawn_Wrapper; }
+    /*NJsCPlayer.FPawn*/ GetPlayerPawnWrapper() { return this.PlayerPawnWrapper; }
+
+    OnPreReloadScript(index)
+    {
+        if (IsValidObject(this.PlayerPawnWrapper))
+            this.PlayerPawnWrapper.OnPreReloadScript(index);
+    }
 };

@@ -165,7 +165,6 @@ void ACGameState_Test::Tick(float DeltaSeconds)
 	UCsManager_StaticMeshActor::Get(this)->Update(DeltaTime);
 	UCsManager_SkeletalMeshActor::Get(this)->Update(DeltaTime);
 
-
 	// Update UpdateObjects with DeltaTime
 	for (FCsUpdate& UpdateObject : UpdateObjects)
 	{
