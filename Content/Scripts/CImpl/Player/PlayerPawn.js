@@ -6,6 +6,7 @@
 // Library
 var NJsCommon = require('Cs/Library/Library_Common.js');
 var NJsFunction = require('Cs/Library/Library_Function.js');
+var NJsMath = require('Cs/Library/Library_Math.js');
 
 // "typedefs" - library
 var GameEventLibrary = CsScriptLibrary_GameEvent;
@@ -19,6 +20,10 @@ var check = CommonLibrary.check;
 var IsValidObjectChecked = CommonLibrary.IsValidObjectChecked;
 var IsValidObject = CommonLibrary.IsValidObject;
 var IsClassChecked = CommonLibrary.IsClassChecked;
+    // Math
+var BitFlag_Test = NJsMath.FLibrary.BitFlag_Test;
+var BitFlag_Set = NJsMath.FLibrary.BitFlag_Set;
+var BitFlag_Clear = NJsMath.FLibrary.BitFlag_Clear;
 
 // Globals
 /** @type {FJsCore} */
@@ -44,6 +49,8 @@ module.exports = class NJsCPlayer
             StopMoveForward:    GameEventLibrary.Get("StopMoveForward"),
             StartMoveBack:      GameEventLibrary.Get("StartMoveBack"),
             StopMoveBack:       GameEventLibrary.Get("StopMoveBack"),
+            LookUpDown:         GameEventLibrary.Get("LookUpDown"),
+            LookLeftRight:      GameEventLibrary.Get("LookLeftRight")
         }
 
         static EMoveForwardBack = 
@@ -61,7 +68,10 @@ module.exports = class NJsCPlayer
             /** @type{SpringArmComponent} */ this.CameraBoom = null;
             /** @type{CameraComponent} */ this.FollowCamera = null;
 
+            // Look
+
             // Movement
+
             /** @type{boolean}*/ this.bMoveForwardBack = false;
             /** @type{number} */ this.MoveForwardBackMask = 0;
             /** @type{number} */ this.MoveForwardBackDirection = 0;
@@ -169,10 +179,11 @@ module.exports = class NJsCPlayer
 
                 this.Ptr.Mesh.SetSkeletalMeshAsset(sm);
 
-                let location = new Vector({X: 0.0, Y: 0.0, Z: 0.0});
+                let location = new Vector.C({X: 0.0, Y: 0.0, Z: 0.0});
                 location.Z = -this.Ptr.CapsuleComponent.GetScaledCapsuleHalfHeight();
+                let rotation = new Rotator.C({Pitch: 0.0, Yaw: -90.0, Roll: 0.0});
 
-                this.Ptr.Mesh.K2_SetRelativeLocation(location);
+                this.Ptr.Mesh.K2_SetRelativeLocationAndRotation(location, rotation);
             }
             // Set Animation
             {
@@ -234,10 +245,25 @@ module.exports = class NJsCPlayer
         {
             let event = info.Event;
             
+            // Look
+            
+                // NOTE: For now "Resolve" Look immediately
+
+                // LookUpDown
+            if (GameEventLibrary.EqualEqual(event, GameEventType.LookUpDown))
+            {
+                this.Ptr.AddControllerPitchInput(-info.Value);
+            }
+                // LookLeftRight
+            if (GameEventLibrary.EqualEqual(event, GameEventType.LookLeftRight))
+            {
+                this.Ptr.AddControllerYawInput(info.Value);
+            }
+
             // Movement
 
-            // StartMoveForward | StopMoveForward
-            // StartMoveBack | StopMoveBack
+                // StartMoveForward | StopMoveForward
+                // StartMoveBack | StopMoveBack
             if (GameEventLibrary.EqualEqual(event, GameEventType.StartMoveForward) ||
                 GameEventLibrary.EqualEqual(event, GameEventType.StopMoveForward) ||
                 GameEventLibrary.EqualEqual(event, GameEventType.StartMoveBack) ||
@@ -261,10 +287,12 @@ module.exports = class NJsCPlayer
             {
                 let event = info.Event;
                 
+            // Forward
+
                 // StartMoveForward
                 if (GameEventLibrary.EqualEqual(event, GameEventType.StartMoveForward))
                 {
-                    this.MoveForwardBackMask |= MoveForwardBackMaskType.Forward;
+                    this.MoveForwardBackMask = BitFlag_Set(this.MoveForwardBackMask, MoveForwardBackMaskType.Forward);
 
                     moveForward_firstPressed = true;
                     moveForward_amount = info.Value;
@@ -272,11 +300,27 @@ module.exports = class NJsCPlayer
                 // StopMoveForward
                 if (GameEventLibrary.EqualEqual(event, GameEventType.StopMoveForward))
                 {
-                    this.MoveForwardBackMask &= ~(MoveForwardBackMaskType.Forward);
+                    this.MoveForwardBackMask = BitFlag_Clear(this.MoveForwardBackMask, MoveForwardBackMaskType.Forward);
+                }
+
+            // Back
+
+                // StartMoveBack
+                if (GameEventLibrary.EqualEqual(event, GameEventType.StartMoveBack))
+                {
+                    this.MoveForwardBackMask = BitFlag_Set(this.MoveForwardBackMask, MoveForwardBackMaskType.Back);
+
+                    moveBack_firstPressed = true;
+                    moveBack_amount = info.Value;
+                }
+                // StopMoveBack
+                if (GameEventLibrary.EqualEqual(event, GameEventType.StopMoveBack))
+                {
+                    this.MoveForwardBackMask = BitFlag_Clear(this.MoveForwardBackMask, MoveForwardBackMaskType.Back);
                 }
             }
 
-            if ((this.MoveForwardBackMask & MoveForwardBackMaskType.Forward) === MoveForwardBackMaskType.Forward)
+            if (BitFlag_Test(this.MoveForwardBackMask, MoveForwardBackMaskType.Forward))
             {
                 this.MoveForwardBackDirection = 1.0;
 
@@ -291,7 +335,7 @@ module.exports = class NJsCPlayer
                 }
             }
             else
-            if ((this.MoveForwardBackMask & MoveForwardBackMaskType.Back) === MoveForwardBackMaskType.Back)
+            if (BitFlag_Test(this.MoveForwardBackMask, MoveForwardBackMaskType.Back))
             {
                 this.MoveForwardBackDirection = -1.0;
             }
