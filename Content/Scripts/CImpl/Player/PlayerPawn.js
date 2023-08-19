@@ -7,6 +7,8 @@
 var NJsCommon = require('Cs/Library/Library_Common.js');
 var NJsFunction = require('Cs/Library/Library_Function.js');
 var NJsMath = require('Cs/Library/Library_Math.js');
+// Types
+var FJsMask = require('Cs/Types/Mask.js');
 
 // "typedefs" - library
 var GameEventLibrary = CsScriptLibrary_GameEvent;
@@ -34,8 +36,8 @@ var self = null;
 var ClassType = null;
 /** @type {NJsCPlayer.FPawn.EGameEvent} */
 var GameEventType = null;
-/** @type {NJsCPlayer.FPawn.EMoveForwardBack} */
-var MoveForwardBackMaskType = null;
+/** @type {NJsCPlayer.FPawn.EDirection} */
+var DirectionType = null;
 
 var ClassName = "NJsCPlayer.FPawn"
 
@@ -49,14 +51,20 @@ module.exports = class NJsCPlayer
             StopMoveForward:    GameEventLibrary.Get("StopMoveForward"),
             StartMoveBack:      GameEventLibrary.Get("StartMoveBack"),
             StopMoveBack:       GameEventLibrary.Get("StopMoveBack"),
+            StartMoveLeft:      GameEventLibrary.Get("StartMoveLeft"),
+            StopMoveLeft:       GameEventLibrary.Get("StopMoveLeft"),
+            StartMoveRight:     GameEventLibrary.Get("StartMoveRight"),
+            StopMoveRight:      GameEventLibrary.Get("StopMoveRight"),
             LookUpDown:         GameEventLibrary.Get("LookUpDown"),
             LookLeftRight:      GameEventLibrary.Get("LookLeftRight")
         }
 
-        static EMoveForwardBack = 
+        static EDirection = 
         {
-            Forward:    1 << 0,
-            Back:       1 << 1
+            Forward:    { Value: 0, Mask: 1 << 0},
+            Back:       { Value: 1, Mask: 1 << 1},
+            Left:       { Value: 2, Mask: 1 << 2},
+            Right:      { Value: 3, Mask: 1 << 3}
         }
 
         constructor()
@@ -72,9 +80,9 @@ module.exports = class NJsCPlayer
 
             // Movement
 
-            /** @type{boolean}*/ this.bMoveForwardBack = false;
-            /** @type{number} */ this.MoveForwardBackMask = 0;
-            /** @type{number} */ this.MoveForwardBackDirection = 0;
+            /** @type{FJsMask} */ this.MoveDirectionMask = new FJsMask();
+            /** @type{number[]} */ this.MoveDirectionAmounts = [];
+
             /** @type{CsGameEventInfo[]}*/ this.QueuedMoveEvents = [];
 
         }
@@ -128,13 +136,18 @@ module.exports = class NJsCPlayer
             self = this;
             ClassType = NJsCPlayer.FPawn;
             GameEventType = NJsCPlayer.FPawn.EGameEvent;
-            MoveForwardBackMaskType = NJsCPlayer.FPawn.EMoveForwardBack;
+            DirectionType = NJsCPlayer.FPawn.EDirection;
 
             IsValidObjectChecked(context, core);
             Core = core;
 
             IsValidObjectChecked(context, ptr);
             this.Ptr = ptr;
+
+            this.MoveDirectionAmounts[DirectionType.Forward.Value] = 0.0;
+            this.MoveDirectionAmounts[DirectionType.Back.Value] = 0.0;
+            this.MoveDirectionAmounts[DirectionType.Left.Value] = 0.0;
+            this.MoveDirectionAmounts[DirectionType.Right.Value] = 0.0;
 
             if (!isReload)
                 this.FirstInit();
@@ -154,7 +167,7 @@ module.exports = class NJsCPlayer
                 // Character moves in the direction of input...
             this.Ptr.CharacterMovement.bOrientRotationToMovement = true; 
                 // ...at this rotation rate
-            this.Ptr.CharacterMovement.RotationRate = new Rotator({Pitch: 0.0, Yaw: 500.0, Roll: 0.0});
+            this.Ptr.CharacterMovement.RotationRate = new Rotator.C({Pitch: 0.0, Yaw: 500.0, Roll: 0.0});
 
             // Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
             // instead of recompiling to adjust them
@@ -188,7 +201,7 @@ module.exports = class NJsCPlayer
             // Set Animation
             {
                 let AnimInstanceLibrary = CsScriptLibrary_AnimInstance;
-
+                
                 let path = '/Game/Characters/Mannequins/Animations/ABP_Quinn.ABP_Quinn';
                 let ac = AnimInstanceLibrary.LoadAndGetGeneratedClassByStringPath(context, path);
                 IsClassChecked(context, ac);
@@ -243,6 +256,9 @@ module.exports = class NJsCPlayer
 
         OnProcessGameEventInfo_Internal(group /*ECsGameEventCoordinatorGroup*/, info /*CsGameEventInfo*/)
         {
+            // typedefs
+            let Evt_EqEq = GameEventLibrary.EqualEqual;
+
             let event = info.Event;
             
             // Look
@@ -250,24 +266,30 @@ module.exports = class NJsCPlayer
                 // NOTE: For now "Resolve" Look immediately
 
                 // LookUpDown
-            if (GameEventLibrary.EqualEqual(event, GameEventType.LookUpDown))
+            if (Evt_EqEq(event, GameEventType.LookUpDown))
             {
                 this.Ptr.AddControllerPitchInput(-info.Value);
             }
                 // LookLeftRight
-            if (GameEventLibrary.EqualEqual(event, GameEventType.LookLeftRight))
+            if (Evt_EqEq(event, GameEventType.LookLeftRight))
             {
                 this.Ptr.AddControllerYawInput(info.Value);
             }
 
             // Movement
 
-                // StartMoveForward | StopMoveForward
-                // StartMoveBack | StopMoveBack
-            if (GameEventLibrary.EqualEqual(event, GameEventType.StartMoveForward) ||
-                GameEventLibrary.EqualEqual(event, GameEventType.StopMoveForward) ||
-                GameEventLibrary.EqualEqual(event, GameEventType.StartMoveBack) ||
-                GameEventLibrary.EqualEqual(event, GameEventType.StopMoveBack))
+                // Forward  - StartMoveForward | StopMoveForward
+                // Back     - StartMoveBack | StopMoveBack
+                // Left     - StartMoveLeft | StopMoveLeft
+                // Right    - StartMoveRight | StopMoveRight
+            if (Evt_EqEq(event, GameEventType.StartMoveForward) ||
+                Evt_EqEq(event, GameEventType.StopMoveForward) ||
+                Evt_EqEq(event, GameEventType.StartMoveBack) ||
+                Evt_EqEq(event, GameEventType.StopMoveBack) ||
+                Evt_EqEq(event, GameEventType.StartMoveLeft) ||
+                Evt_EqEq(event, GameEventType.StopMoveLeft) ||
+                Evt_EqEq(event, GameEventType.StartMoveRight) ||
+                Evt_EqEq(event, GameEventType.StopMoveRight))
             {
                 this.QueuedMoveEvents.push(info);
             }
@@ -275,13 +297,18 @@ module.exports = class NJsCPlayer
 
         ResolveMovement()
         {
-            // Forward takes precedent over Back
+            let context = ClassName + ".ResolveMovement";
 
-            let moveForward_firstPressed = false;
-            let moveForward_amount = 0.0;
+            // typedefs
+            let Evt_EqEq = GameEventLibrary.EqualEqual;
 
-            let moveBack_firstPressed = false;
-            let moveBack_amount = 0.0;
+            let forward_firstPressed = false;
+            let back_firstPressed = false;
+            let left_firstPressed = false;
+            let right_firstPressed = false;
+
+            let forward_amount = 0.0;
+            let right_amount = 0.0;
 
             for (let info of this.QueuedMoveEvents)
             {
@@ -290,69 +317,150 @@ module.exports = class NJsCPlayer
             // Forward
 
                 // StartMoveForward
-                if (GameEventLibrary.EqualEqual(event, GameEventType.StartMoveForward))
+                if (Evt_EqEq(event, GameEventType.StartMoveForward))
                 {
-                    this.MoveForwardBackMask = BitFlag_Set(this.MoveForwardBackMask, MoveForwardBackMaskType.Forward);
+                    this.MoveDirectionMask.Set(DirectionType.Forward.Mask);
 
-                    moveForward_firstPressed = true;
-                    moveForward_amount = info.Value;
+                    forward_firstPressed = true;
+                    this.MoveDirectionAmounts[DirectionType.Forward.Value] = info.Value;
                 }
                 // StopMoveForward
-                if (GameEventLibrary.EqualEqual(event, GameEventType.StopMoveForward))
+                if (Evt_EqEq(event, GameEventType.StopMoveForward))
                 {
-                    this.MoveForwardBackMask = BitFlag_Clear(this.MoveForwardBackMask, MoveForwardBackMaskType.Forward);
+                    this.MoveDirectionMask.Clear(DirectionType.Forward.Mask);
+
+                    this.MoveDirectionAmounts[DirectionType.Forward.Value] = 0.0;
                 }
 
             // Back
 
                 // StartMoveBack
-                if (GameEventLibrary.EqualEqual(event, GameEventType.StartMoveBack))
+                if (Evt_EqEq(event, GameEventType.StartMoveBack))
                 {
-                    this.MoveForwardBackMask = BitFlag_Set(this.MoveForwardBackMask, MoveForwardBackMaskType.Back);
+                    this.MoveDirectionMask.Set(DirectionType.Back.Mask);
 
-                    moveBack_firstPressed = true;
-                    moveBack_amount = info.Value;
+                    back_firstPressed = true;
+                    this.MoveDirectionAmounts[DirectionType.Back.Value] = info.Value;
                 }
                 // StopMoveBack
-                if (GameEventLibrary.EqualEqual(event, GameEventType.StopMoveBack))
+                if (Evt_EqEq(event, GameEventType.StopMoveBack))
                 {
-                    this.MoveForwardBackMask = BitFlag_Clear(this.MoveForwardBackMask, MoveForwardBackMaskType.Back);
+                    this.MoveDirectionMask.Clear(DirectionType.Back.Mask);
+
+                    this.MoveDirectionAmounts[DirectionType.Back.Value] = 0.0;
+                }
+
+            // Left
+
+                // StartMoveLeft
+                if (Evt_EqEq(event, GameEventType.StartMoveLeft))
+                {
+                    this.MoveDirectionMask.Set(DirectionType.Left.Mask);
+
+                    left_firstPressed = true;
+                    this.MoveDirectionAmounts[DirectionType.Left.Value] = info.Value;
+                }
+                // StopMoveLeft
+                if (Evt_EqEq(event, GameEventType.StopMoveLeft))
+                {
+                    this.MoveDirectionMask.Clear(DirectionType.Left.Mask);
+
+                    this.MoveDirectionAmounts[DirectionType.Left.Value] = 0.0;
+                }
+
+            // Right
+
+                // StartMoveRight
+                if (Evt_EqEq(event, GameEventType.StartMoveRight))
+                {
+                    this.MoveDirectionMask.Set(DirectionType.Right.Mask);
+
+                    right_firstPressed = true;
+                    this.MoveDirectionAmounts[DirectionType.Right.Value] = info.Value;
+                }
+                // StopMoveRight
+                if (Evt_EqEq(event, GameEventType.StopMoveRight))
+                {
+                    this.MoveDirectionMask.Clear(DirectionType.Right.Mask);
+
+                    this.MoveDirectionAmounts[DirectionType.Right.Value] = 0.0;
                 }
             }
 
-            if (BitFlag_Test(this.MoveForwardBackMask, MoveForwardBackMaskType.Forward))
-            {
-                this.MoveForwardBackDirection = 1.0;
+            // Forward | Back
+            //  Forward takes precedent over Back
 
-                if (moveForward_firstPressed)
+            
+
+            if (this.MoveDirectionMask.Test(DirectionType.Forward.Mask))
+            {
+                forward_amount = this.MoveDirectionAmounts[DirectionType.Forward.Value];
+
+                if (forward_firstPressed)
                 {
                     // Do Nothing
                 }
                 else
-                if (moveBack_firstPressed)
+                if (back_firstPressed)
                 {
-                    this.MoveForwardBackDirection = -1.0;
+                    forward_amount = this.MoveDirectionAmounts[DirectionType.Back.Value];
                 }
             }
             else
-            if (BitFlag_Test(this.MoveForwardBackMask, MoveForwardBackMaskType.Back))
+            if (this.MoveDirectionMask.Test(DirectionType.Back.Mask))
             {
-                this.MoveForwardBackDirection = -1.0;
+                forward_amount = this.MoveDirectionAmounts[DirectionType.Back.Value];
+            }
+            else
+            {
+                //this.MoveDirectionAmounts[DirectionType.Forward.Value] = 0.0;
+                //this.MoveDirectionAmounts[DirectionType.Back.Value] = 0.0;
             }
 
-            if (this.MoveForwardBackMask > 0)
+            // Left | Right
+            //  Right takes precedent over Left
+
+            
+
+            if (this.MoveDirectionMask.Test(DirectionType.Right.Mask))
             {
-                let MathLibrary = CsScriptLibrary_Math;
+                right_amount = this.MoveDirectionAmounts[DirectionType.Right.Value];
 
-                /** @type{Controller} */ let c = this.Ptr.GetController();
-                let rotation = c.GetControlRotation();
+                if (right_firstPressed)
+                {  
+                    // Do Nothing
+                }
+                else
+                if (left_firstPressed)
+                {
+                    right_amount = this.MoveDirectionAmounts[DirectionType.Left.Value];
+                }
+            }
+            else
+            if (this.MoveDirectionMask.Test(DirectionType.Left.Mask))
+            {
+                right_amount = this.MoveDirectionAmounts[DirectionType.Left.Value];
+            }
+            else
+            {
+               // this.MoveDirectionAmounts[DirectionType.Left.Value] = 0.0;
+                //this.MoveDirectionAmounts[DirectionType.Right.Value] = 0.0;
+            }
+            
+            let MathLibrary = CsScriptLibrary_Math;
 
-                let forward = MathLibrary.Rotator3d_Forward3d_OnlyYaw(rotation);
+            /** @type{Controller} */ let c = this.Ptr.GetController();
+            let rotation = c.GetControlRotation();
 
-                let value = 1.0;
-                let scalar = this.MoveForwardBackDirection * value;
+            //let forward = MathLibrary.Rotator3d_Forward3d_OnlyYaw(rotation);
+            let forward = MathLibrary.RotationMatrix44d_UnitAxis_OnlyYaw(rotation, EAxis.X);
+            //let right = MathLibrary.Rotator3d_Right3d_OnlyYaw(rotation);
+            let right = MathLibrary.RotationMatrix44d_UnitAxis_OnlyYaw(rotation, EAxis.Y);
 
-                this.Ptr.AddMovementInput(forward, scalar);
+            if (this.MoveDirectionMask.AnySet())
+            {
+                this.Ptr.AddMovementInput(forward, forward_amount);
+                this.Ptr.AddMovementInput(right, right_amount);
             }
 
             this.QueuedMoveEvents = [];
