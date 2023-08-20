@@ -16,6 +16,9 @@ var NJsFunction = require('Cs/Library/Library_Function.js');
 //var NJsCGame1 = require('Maps/Hub/Game/Play/GamePlay_Hub.js');
 // Player
 var NJsCPlayer = require('CImpl/Player/PlayerPawn.js');
+// Data
+    // Player
+var NJsCPlayer1 = require('CImpl/Player/Data/Instance/Data_PlayerImpl_Inst.js')
 
 // "typedefs" - classes
 /** @type {CommonLibrary} */
@@ -26,6 +29,9 @@ var FunctionLibrary = NJsFunction.FLibrary;
 //var GamePlayImplWrapperType = NJsCGame1.NPlay.FHub;
 /** @type {NJsCPlayer.FPawn} */
 var PlayerPawnType = NJsCPlayer.FPawn;
+    // Data
+/** @type {NJsCPlayer.NData.NInstance.FDefault} */
+var Data_Player = NJsCPlayer1.NData.NInstance.FDefault;
 
 // "typedefs" - functions
 var checkf = CommonLibrary.checkf;
@@ -34,7 +40,7 @@ var IsValidObject = CommonLibrary.IsValidObject;
 var IsValidObjectChecked = CommonLibrary.IsValidObjectChecked;
 var IsIntChecked = CommonLibrary.IsIntChecked;
 
-// Constats
+// Constants
 const INDEX_NONE = -1;
 
 // Globals
@@ -75,7 +81,10 @@ function main()
     Core.PlayerController = PlayerController;
     Core.PlayerState = PlayerState;
     //Core.PlayerPawn = PlayerPawn;
+    Core.Script.Index = ScriptIndex;
 
+    Core.Init();
+    
     //Core.GamePlayImpl_Wrapper = new GamePlayImplWrapperType();
 
     CompileClasses();
@@ -83,6 +92,8 @@ function main()
     //Core.PlayerPawn_Wrapper = new PlayerPawnWrapperType();
 
     //let gs = CGameState.C(GameState);
+
+    CreateAndLoadData();
 
     // Delegates
 
@@ -106,6 +117,9 @@ function main()
 
     if (!isScriptReload)
         FirstInit();
+
+    // Create and Load Data
+
 
     // Player
     {
@@ -134,6 +148,21 @@ main();
 function CompileClasses()
 {
     let uc = null;
+}
+
+function CreateAndLoadData()
+{
+    let manager_data = Core.GetScript().GetManager_Data();
+
+    // Create
+    {
+        // Player
+        {
+            manager_data.AddData(Data_Player.GetName(), Data_Player.Construct());
+        }
+    }
+    // Load
+    manager_data.LoadAll();
 }
 
 function OnUpdate(group, deltaTime)

@@ -1,8 +1,6 @@
 /// <reference path="../../../Cs/custom_typings/Cs.ts">/>
-// Game
-/// <reference path="Game/Play/GamePlay_Hub.ts">/>
 // Player
-/// <reference path="../../CImpl/Player/PlayerPawn_Wrapper.ts">/>
+/// <reference path="../../CImpl/Player/PlayerPawn.ts">/>
 // ; typing info for auto-completion in Visual Studio Code
 
 "use strict"
@@ -36,6 +34,13 @@ module.exports = class FJsP_Hub_Core extends FJsCore
         /** @type {NJsCGame.NPlay.FHub} */
        // this.GamePlayImpl_Wrapper = null;
         /** @type{NJsCPlayer.FPawn} */ this.PlayerPawnWrapper = null;
+    }
+
+    Init()
+    {
+        super.Init();
+
+        // Setup Managers
     }
 
     Shutdown()

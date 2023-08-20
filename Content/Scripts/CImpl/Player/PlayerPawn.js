@@ -211,9 +211,9 @@ module.exports = class NJsCPlayer
 
             // Teleport to start location
             {
-                let location = new Vector.C({X: 1000.0, Y: 0.0, Z: 100.0});
-                //location.Z += this.Ptr.CapsuleComponent.GetScaledCapsuleHalfHeight();
-                //location.Z += 1.0;
+                let location = new Vector.C({X: 0.0, Y: 0.0, Z: 0.0});
+                const GROUND_OFFSET_Z = 1.0;
+                location.Z += GROUND_OFFSET_Z;
 
                 let rotation = new Rotator.C({Pitch: 0.0, Yaw: 0.0, Roll: 0.0});
 
