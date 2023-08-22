@@ -43,6 +43,8 @@ var ClassName = "NJsCPlayer.FPawn"
 
 module.exports = class NJsCPlayer
 {
+    static GetExcuteFilePath() { return 'CImpl/Player/PlayerPawn.js'; }
+
     static FPawn = class PawnClass
     {
         static EGameEvent =
@@ -73,17 +75,21 @@ module.exports = class NJsCPlayer
          
             // Component
 
-            /** @type{SpringArmComponent} */ this.CameraBoom = null;
-            /** @type{CameraComponent} */ this.FollowCamera = null;
+            /** @type {SpringArmComponent} */ this.CameraBoom = null;
+            /** @type {CameraComponent} */ this.FollowCamera = null;
+
+            // Data
+            /** @type {NJsCPlayer.NData.NDefault.FImpl} */ this.Data = null;
+            /** @type {NJsCPlayer.NData.NSkin.NDefault.FImpl} */ this.SkinData = null;
 
             // Look
 
             // Movement
 
-            /** @type{FJsMask} */ this.MoveDirectionMask = new FJsMask();
-            /** @type{number[]} */ this.MoveDirectionAmounts = [];
+            /** @type {FJsMask} */ this.MoveDirectionMask = new FJsMask();
+            /** @type {number[]} */ this.MoveDirectionAmounts = [];
 
-            /** @type{CsGameEventInfo[]}*/ this.QueuedMoveEvents = [];
+            /** @type {CsGameEventInfo[]} */ this.QueuedMoveEvents = [];
 
         }
 
@@ -152,73 +158,7 @@ module.exports = class NJsCPlayer
             if (!isReload)
                 this.FirstInit();
 
-            // Collision
-            this.Ptr.CapsuleComponent.SetCapsuleSize(35.0, 90.0, true);
-
-            // Rotation
-
-                // Don't rotate when the controller rotates. Let that just affect the camera.
-            this.Ptr.bUseControllerRotationPitch = false;
-            this.Ptr.bUseControllerRotationYaw = false;
-            this.Ptr.bUseControllerRotationRoll = false;
-
-            // Movement
-
-                // Character moves in the direction of input...
-            this.Ptr.CharacterMovement.bOrientRotationToMovement = true; 
-                // ...at this rotation rate
-            this.Ptr.CharacterMovement.RotationRate = new Rotator.C({Pitch: 0.0, Yaw: 500.0, Roll: 0.0});
-
-            // Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
-            // instead of recompiling to adjust them
-            this.Ptr.CharacterMovement.JumpZVelocity = 700.0;
-            this.Ptr.CharacterMovement.AirControl = 0.35;
-            this.Ptr.CharacterMovement.MaxWalkSpeed = 500.0;
-            this.Ptr.CharacterMovement.MinAnalogWalkSpeed = 20.0;
-            this.Ptr.CharacterMovement.BrakingDecelerationWalking = 2000.0;
-
-            this.Ptr.CharacterMovement.GravityScale = 1.5;
-            this.Ptr.CharacterMovement.MaxAcceleration = 1500.0;
-            this.Ptr.CharacterMovement.BrakingFrictionFactor = 1.0;
-            this.Ptr.CharacterMovement.bUseSeparateBrakingFriction = true;
-
-            // Set Mesh
-            {
-                let SkeletalMeshLibrary = CsScriptLibrary_SkeletalMesh;
-
-                let path = '/Game/Characters/Mannequins/Meshes/SKM_Quinn_Simple.SKM_Quinn_Simple';
-                let sm = SkeletalMeshLibrary.LoadByStringPath(context, path);
-                IsValidObjectChecked(context, sm);
-
-                this.Ptr.Mesh.SetSkeletalMeshAsset(sm);
-
-                let location = new Vector.C({X: 0.0, Y: 0.0, Z: 0.0});
-                location.Z = -this.Ptr.CapsuleComponent.GetScaledCapsuleHalfHeight();
-                let rotation = new Rotator.C({Pitch: 0.0, Yaw: -90.0, Roll: 0.0});
-
-                this.Ptr.Mesh.K2_SetRelativeLocationAndRotation(location, rotation);
-            }
-            // Set Animation
-            {
-                let AnimInstanceLibrary = CsScriptLibrary_AnimInstance;
-                
-                let path = '/Game/Characters/Mannequins/Animations/ABP_Quinn.ABP_Quinn';
-                let ac = AnimInstanceLibrary.LoadAndGetGeneratedClassByStringPath(context, path);
-                IsClassChecked(context, ac);
-
-                this.Ptr.Mesh.SetAnimClass(ac);
-            }
-
-            // Teleport to start location
-            {
-                let location = new Vector.C({X: 0.0, Y: 0.0, Z: 0.0});
-                const GROUND_OFFSET_Z = 1.0;
-                location.Z += GROUND_OFFSET_Z;
-
-                let rotation = new Rotator.C({Pitch: 0.0, Yaw: 0.0, Roll: 0.0});
-
-                let result = this.Ptr.K2_TeleportTo(location, rotation);
-            }
+            this.ApplyData();
 
             // Bind delegates
 
@@ -247,6 +187,103 @@ module.exports = class NJsCPlayer
         Update_Internal(deltaTime /*FCsDeltaTime*/)
         {
             this.ResolveMovement();
+        }
+
+        SetData(data /*NJsCPlayer.NData.NDefault.FImpl */)
+        {
+            this.Data = data;
+        }
+
+        SetSkinData(data /*NJsCPlayer.NData.NSkin.NDefault.FImpl*/)
+        {
+            this.SkinData = data;
+        }
+
+        SetAnimSetData(data /*NJsCPlayer.NData.NAnim.NSet.FImpl*/)
+        {
+            this.AnimSetData = data;
+        }
+
+        ApplyData()
+        {
+            let context = ClassName + ".ApplyData";
+
+            this.Data.IsValidChecked(context);
+            this.SkinData.IsValidChecked(context);
+
+            // Collision
+            this.Ptr.CapsuleComponent.SetCapsuleSize(35.0, 90.0, true);
+
+            // Orientation
+            {
+                let info = this.Data.GetOrientationInfo();
+
+                // Don't rotate when the controller rotates. Let that just affect the camera.
+                this.Ptr.bUseControllerRotationPitch = info.UseControllerRotationPitch();
+                this.Ptr.bUseControllerRotationYaw   = info.UseControllerRotationYaw();
+                this.Ptr.bUseControllerRotationRoll  = info.UseControllerRotationRoll();
+            }
+
+            // Movement
+            {
+                let info = this.Data.GetMovementInfo();
+
+                // Character moves in the direction of input...
+                this.Ptr.CharacterMovement.bOrientRotationToMovement = info.ShouldOrientRotationToMovement(); 
+                    // ...at this rotation rate
+                this.Ptr.CharacterMovement.RotationRate = info.GetRotationRate();
+
+                // Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
+                // instead of recompiling to adjust them
+                this.Ptr.CharacterMovement.JumpZVelocity                = info.GetJumpZVelocity();
+                this.Ptr.CharacterMovement.AirControl                   = info.GetAirControl();
+                this.Ptr.CharacterMovement.MaxWalkSpeed                 = info.GetMaxWalkSpeed();
+                this.Ptr.CharacterMovement.MinAnalogWalkSpeed           = info.GetMinAnalogWalkSpeed();
+                this.Ptr.CharacterMovement.BrakingDecelerationWalking   = info.GetBrakingDecelerationWalking();
+                this.Ptr.CharacterMovement.GravityScale                 = info.GetGravityScale();
+                this.Ptr.CharacterMovement.MaxAcceleration              = info.GetMaxAcceleration();
+                this.Ptr.CharacterMovement.BrakingFrictionFactor        = info.GetBrakingFrictionFactor();
+                this.Ptr.CharacterMovement.bUseSeparateBrakingFriction  = info.UseSeparateBrakingFriction();
+            }
+
+            // Set Mesh
+            {
+                let info = this.SkinData.GetMeshInfo();
+
+                this.Ptr.Mesh.SetSkeletalMeshAsset(info.GetMesh());
+
+                let location = info.GetLocation();
+                location.Z = -this.Ptr.CapsuleComponent.GetScaledCapsuleHalfHeight();
+                let rotation = info.GetRotation();
+
+                this.Ptr.Mesh.K2_SetRelativeLocationAndRotation(location, rotation);
+            }
+            // Set Materials
+            {
+                let info = this.SkinData.GetMaterialInfo();
+
+                let MaterialLibrary = CsScriptLibrary_Material;
+
+                let result = MaterialLibrary.Set(context, this.Ptr.Mesh, info.GetMaterials());
+                check(result);
+            }
+            // Set Animation
+            {
+                let info = this.AnimSetData.GetAnimInfo();
+
+                this.Ptr.Mesh.SetAnimClass(info.GetAnimClass());
+            }
+
+            // Teleport to start location
+            {
+                let location = new Vector.C({X: 0.0, Y: 0.0, Z: 0.0});
+                const GROUND_OFFSET_Z = 1.0;
+                location.Z += GROUND_OFFSET_Z;
+
+                let rotation = new Rotator.C({Pitch: 0.0, Yaw: 0.0, Roll: 0.0});
+
+                let result = this.Ptr.K2_TeleportTo(location, rotation);
+            }
         }
 
         static OnProcessGameEventInfo(group /*FECsGameEventCoordinatorGroup*/, info /*FCsGameEventInfo*/)
@@ -389,9 +426,6 @@ module.exports = class NJsCPlayer
 
             // Forward | Back
             //  Forward takes precedent over Back
-
-            
-
             if (this.MoveDirectionMask.Test(DirectionType.Forward.Mask))
             {
                 forward_amount = this.MoveDirectionAmounts[DirectionType.Forward.Value];
@@ -419,9 +453,6 @@ module.exports = class NJsCPlayer
 
             // Left | Right
             //  Right takes precedent over Left
-
-            
-
             if (this.MoveDirectionMask.Test(DirectionType.Right.Mask))
             {
                 right_amount = this.MoveDirectionAmounts[DirectionType.Right.Value];

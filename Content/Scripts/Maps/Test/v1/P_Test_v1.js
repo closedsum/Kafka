@@ -18,20 +18,22 @@ var NJsFunction = require('Cs/Library/Library_Function.js');
 var NJsCPlayer = require('CImpl/Player/PlayerPawn.js');
 // Data
     // Player
-var NJsCPlayer1 = require('CImpl/Player/Data/Instance/Data_PlayerImpl_Inst.js')
+var NJsCPlayer1 = require('CImpl/Player/Data/Instance/Data_Player_DefaultImpl_Inst.js');
+var NJsCPlayer2 = require('CImpl/Player/Skin/Data/Instance/Data_Player_Skin_DefaultImpl_Inst.js');
+var NJsCPlayer3 = require('CImpl/Player/Anim/Set/Data/Instance/Data_Player_AnimSet_DefaultImpl_Inst.js');
 
 // "typedefs" - classes
 /** @type {CommonLibrary} */
 var CommonLibrary = NJsCommon.FLibrary;
-/** @type {FunctionLibrary} */
-var FunctionLibrary = NJsFunction.FLibrary;
-/** @type {NJsCGame.NPlay.FHub} */
-//var GamePlayImplWrapperType = NJsCGame1.NPlay.FHub;
 /** @type {NJsCPlayer.FPawn} */
 var PlayerPawnType = NJsCPlayer.FPawn;
     // Data
-/** @type {NJsCPlayer.NData.NInstance.FDefault} */
-var Data_Player = NJsCPlayer1.NData.NInstance.FDefault;
+/** @type {NJsCPlayer.NData.NDefault.NImpl.FInstance} */
+var Data_Player = NJsCPlayer1.NData.NDefault.NImpl.FInstance;
+/** @type {NJsCPlayer.NData.NSkin.NDefault.NImpl.FInstance} */
+var Data_Player_Skin = NJsCPlayer2.NData.NSkin.NDefault.NImpl.FInstance;
+/** @type {NJsCPlayer.NData.NAnim.NSet.NDefault.NImpl.FInstance} */
+var Data_Player_AnimSet = NJsCPlayer3.NData.NAnim.NSet.NDefault.NImpl.FInstance;
 
 // "typedefs" - functions
 var checkf = CommonLibrary.checkf;
@@ -57,9 +59,16 @@ function compile(source)
 
 function main()
 {
-    console.log("Entry Point - " + FileShortName);
-
     let context = "Entry Point - " + FileShortName;
+    console.log(context);
+
+    let isScriptReload = Manager_Javascript.IsScriptReload();
+
+    if (isScriptReload)
+    {
+        purge_modules();
+        gc();
+    }
 
     ScriptIndex = Manager_Javascript.GetCurrentScriptIndex();
     IsIntChecked(context, ScriptIndex);
@@ -113,13 +122,8 @@ function main()
 
     //gs.OnShutdown_ScriptEvent.Add(OnShutdown);
 
-    let isScriptReload = Manager_Javascript.bScriptReload;
-
     if (!isScriptReload)
         FirstInit();
-
-    // Create and Load Data
-
 
     // Player
     {
@@ -137,6 +141,19 @@ function main()
 
         /** @type{NJsCPlayer.FPawn} */ let pp = new PlayerPawnType();
 
+        let manager_data = Core.GetScript().GetManager_Data();
+
+        // TODO: Check data is Valid
+
+        let data = manager_data.GetData(Data_Player.GetName());
+        pp.SetData(data);
+
+        let skinData = manager_data.GetData(Data_Player_Skin.GetName());
+        pp.SetSkinData(skinData);
+
+        let animSetData = manager_data.GetData(Data_Player_AnimSet.GetName());
+        pp.SetAnimSetData(animSetData);
+        
         pp.Init(Core, Core.GetPlayerPawn(), isScriptReload);
 
         Core.PlayerPawnWrapper = pp;
@@ -145,6 +162,8 @@ function main()
 
 main();
 
+function GetExcuteFilePath() { return 'Maps/Test/v1/P_Test_v1.js'; }
+
 function CompileClasses()
 {
     let uc = null;
@@ -152,6 +171,9 @@ function CompileClasses()
 
 function CreateAndLoadData()
 {
+    let context = FileShortName + ".CreateAndLoadData";
+    //console.log(context);
+
     let manager_data = Core.GetScript().GetManager_Data();
 
     // Create
@@ -159,6 +181,8 @@ function CreateAndLoadData()
         // Player
         {
             manager_data.AddData(Data_Player.GetName(), Data_Player.Construct());
+            manager_data.AddData(Data_Player_Skin.GetName(), Data_Player_Skin.Construct());
+            manager_data.AddData(Data_Player_AnimSet.GetName(), Data_Player_AnimSet.Construct());
         }
     }
     // Load
@@ -173,6 +197,7 @@ function OnUpdate(group, deltaTime)
 function FirstInit()
 {
     let context = FileShortName + ".FirstInit";
+    //console.log(context);
 
     let CharacterLibrary = CsScriptLibrary_Character;
 
