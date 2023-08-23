@@ -23,6 +23,10 @@ var FSkeletalMesh = SkeletalMeshTypes.FSkeletalMesh;
 var FTArrayMaterialInterface = MaterialTypes.FTArrayMaterialInterface;
 /** @type {NJsTypes.FAnimBlueprint} */
 var FAnimBlueprint = AnimTypes.FAnimBlueprint;
+/** @type {NJsTypes.FAnimSequence} */
+var FAnimSequence = AnimTypes.FAnimSequence;
+/** @type {NJsTypes.FBlendSpace1D} */
+var FBlendSpace1D = AnimTypes.FBlendSpace1D;
 
 module.exports = class NJsCPlayer
 {
@@ -186,10 +190,20 @@ module.exports = class NJsCPlayer
         {
             constructor()
             {
-                /** @type {NJsTypes.FAnimBlueprint} */ this.AnimBlueprint = new FAnimBlueprint();
+                /** @type {NJsTypes.FAnimBlueprint} */  this.AnimBlueprint = new FAnimBlueprint();
+                /** @type {NJsTypes.FBlendSpace1D} */   this.WalkRunBlendSpace = new FBlendSpace1D();
+                /** @type {NJsTypes.FAnimSequence} */   this.IdleAnim = new FAnimSequence();
+                /** @type {NJsTypes.FAnimSequence} */   this.JumpAnim = new FAnimSequence();
+                /** @type {NJsTypes.FAnimSequence} */   this.FallAnim = new FAnimSequence();
+                /** @type {NJsTypes.FAnimSequence} */   this.LandAnim = new FAnimSequence();
             }
 
-            /*AnimBlueprintGeneratedClass*/ GetAnimClass() { return this.AnimBlueprint.Get(); }
+            /*AnimBlueprintGeneratedClass*/ GetAnimClass()          { return this.AnimBlueprint.Get(); }
+            /*BlendSpace1D*/                GetWalkRunBlendSpace()  { return this.WalkRunBlendSpace.Get(); }
+            /*AnimSequence*/                GetIdleAnim()           { return this.IdleAnim.Get(); }
+            /*AnimSequence*/                GetJumpAnim()           { return this.JumpAnim.Get(); }
+            /*AnimSequence*/                GetFallAnim()           { return this.FallAnim.Get(); }
+             /*AnimSequence*/               GetLandAnim()           { return this.LandAnim.Get(); }
 
             /**
              * @param {string}      context 
@@ -198,6 +212,11 @@ module.exports = class NJsCPlayer
             /*boolean*/ IsValidChecked(context /*string*/)
             {
                 this.AnimBlueprint.IsValidChecked(context);
+                this.WalkRunBlendSpace.IsValidChecked(context);
+                this.IdleAnim.IsValidChecked(context);
+                this.JumpAnim.IsValidChecked(context);
+                this.FallAnim.IsValidChecked(context);
+                this.LandAnim.IsValidChecked(context);
                 return true;
             }
 
@@ -209,8 +228,23 @@ module.exports = class NJsCPlayer
 
                 /** @type {AnimBlueprintGeneratedClass} */
                 let ac = AnimInstanceLibrary.LoadAndGetGeneratedClassByStringPath(context, this.AnimBlueprint.Path);
-
                 this.AnimBlueprint.Set(ac);
+
+                let BlendSpaceLibrary = CsScriptLibrary_BlendSpace;
+
+                let bs = BlendSpaceLibrary.Load1DByStringPath(context, this.WalkRunBlendSpace.Path);
+                this.WalkRunBlendSpace.Set(bs);
+
+                let AnimSequenceLibrary = CsScriptLibrary_AnimSequence;
+
+                let a = AnimSequenceLibrary.LoadByStringPath(context, this.IdleAnim.Path);
+                this.IdleAnim.Set(a);
+                a = AnimSequenceLibrary.LoadByStringPath(context, this.JumpAnim.Path);
+                this.JumpAnim.Set(a);
+                a = AnimSequenceLibrary.LoadByStringPath(context, this.FallAnim.Path);
+                this.FallAnim.Set(a);
+                a = AnimSequenceLibrary.LoadByStringPath(context, this.LandAnim.Path);
+                this.LandAnim.Set(a);
             }
         }
     }

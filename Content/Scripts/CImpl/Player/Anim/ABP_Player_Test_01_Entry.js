@@ -12,12 +12,18 @@ var Types_Coroutine = require('Cs/Coroutine/Types_Coroutine.js');
 // Library
 var NJsCommon = require('Cs/Library/Library_Common.js');
 var NJsFunction = require('Cs/Library/Library_Function.js');
+// Data
+var NJsCPlayer = require('CImpl/Player/Anim/Set/Data/Instance/Data_Player_AnimSet_DefaultImpl_Inst.js');
 // Anim
 var AnimInstanceType = require('CImpl/Player/Anim/ABP_Player_Test_01.js');
+
 
 // "typedefs" - classes
 /** @type {CommonLibrary} */
 var CommonLibrary = NJsCommon.FLibrary;
+    // Data
+/** @type {NJsCPlayer.NData.NAnim.NSet.NDefault.NImpl.FInstance} */
+var Data_Player_AnimSet = NJsCPlayer.NData.NAnim.NSet.NDefault.NImpl.FInstance;
 
 // "typedefs" - functions
 var checkf = CommonLibrary.checkf;
@@ -75,7 +81,7 @@ function main()
     Core.Init();
     CompileClasses();
 
-    //CreateAndLoadData();
+    CreateAndLoadData();
 
     // Delegates
 
@@ -97,6 +103,13 @@ function main()
     // AnimInstance
     {
         let ai = new AnimInstanceType();
+
+        // TODO: Check data is Valid
+        let manager_data = Core.GetScript().GetManager_Data();
+        
+        let animSetData = manager_data.GetData(Data_Player_AnimSet.GetName());
+
+        ai.SetData(animSetData)
         ai.Init(Core, ac);
 
         Core.GetScript().AddObject(ai);
@@ -116,6 +129,18 @@ function CreateAndLoadData()
 {
     let context = FileShortName + ".CreateAndLoadData";
     //console.log(context);
+
+    let manager_data = Core.GetScript().GetManager_Data();
+
+    // Create
+    {
+        // Player
+        {
+            manager_data.AddData(Data_Player_AnimSet.GetName(), Data_Player_AnimSet.Construct());
+        }
+    }
+    // Load
+    manager_data.LoadAll();
 }
 
 function OnUpdate(group, deltaTime)

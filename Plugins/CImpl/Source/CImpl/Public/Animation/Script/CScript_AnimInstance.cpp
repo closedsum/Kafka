@@ -93,9 +93,10 @@ void UCScript_AnimInstance::BeginDestroy()
 	{
 		typedef NCsJs::NManager::FLibrary JavascriptManagerLibrary;
 
-		UCsManager_Javascript* Manager_Javascript = JavascriptManagerLibrary::GetChecked(Context, GEngine);
-
-		Manager_Javascript->EditorScriptImpl.Shutdown(this);
+		if (UCsManager_Javascript* Manager_Javascript = JavascriptManagerLibrary::GetSafe(Context, GEngine, nullptr))
+		{
+			Manager_Javascript->EditorScriptImpl.Shutdown(this);
+		}
 
 		//ClearCreatedObjects();
 	}
@@ -423,6 +424,22 @@ UAnimSequence* UCScript_AnimInstance::GetSequenceByName(const FName& Name)
 	return nullptr;
 #endif // #if WITH_EDITOR
 	return SequenceByNameMap[Name];
+}
+
+void UCScript_AnimInstance::SetBlendSpace1DByName(const FName& Name, UBlendSpace1D* Blend)
+{
+	BlendSpace1DByNameMap.FindOrAdd(Name) = Blend;
+}
+
+UBlendSpace1D* UCScript_AnimInstance::GetBlendSpace1DByName(const FName& Name)
+{
+#if WITH_EDITOR
+	if (UBlendSpace1D** ValuePtr = BlendSpace1DByNameMap.Find(Name))
+		return *ValuePtr;
+	UE_LOG(LogCImpl, Warning, TEXT("UCScript_AnimInstance::GetBlendSpace1DByName: No BlendSpace1D associated with Name: %s."), *(Name.ToString()));
+	return nullptr;
+#endif // #if WITH_EDITOR
+	return BlendSpace1DByNameMap[Name];
 }
 
 #pragma endregion Variables

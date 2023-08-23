@@ -157,6 +157,8 @@ public:
 
 	TMap<FName, UAnimSequence*> SequenceByNameMap;
 
+	TMap<FName, UBlendSpace1D*> BlendSpace1DByNameMap;
+
 public:
 
 	UFUNCTION(BlueprintCallable, Category = "CImpl|Anim|Instance|Script", meta = (AutoCreateRefTerm = "Name,Value"))
@@ -194,6 +196,12 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "CImpl|Anim|Instance|Script", meta = (BlueprintThreadSafe, AutoCreateRefTerm = "Name"))
 	UAnimSequence* GetSequenceByName(const FName& Name);
+
+	UFUNCTION(BlueprintCallable, Category = "CImpl|Anim|Instance|Script", meta = (AutoCreateRefTerm = "Name"))
+	void SetBlendSpace1DByName(const FName& Name, UBlendSpace1D* Seq);
+
+	UFUNCTION(BlueprintPure, Category = "CImpl|Anim|Instance|Script", meta = (BlueprintThreadSafe, AutoCreateRefTerm = "Name"))
+	UBlendSpace1D* GetBlendSpace1DByName(const FName& Name);
 
 #pragma endregion Variables
 };

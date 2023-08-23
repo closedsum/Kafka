@@ -55,9 +55,14 @@ module.exports = class NJsCPlayer
                             this.Inner = new NJsCPlayer.NData.NAnim.NSet.NDefault.FImpl.FInner();
                         }
 
-                        /*AnimBlueprintGeneratedClass*/ GetAnimClass() { return this.Inner.AnimInfo.GetAnimClass(); }
+                        /*AnimBlueprintGeneratedClass*/ GetAnimClass()          { return this.Inner.AnimInfo.GetAnimClass(); }
+                        /*BlendSpace1D*/                GetWalkRunBlendSpace()  { return this.Inner.AnimInfo.GetWalkRunBlendSpace(); }
+                        /*AnimSequence*/                GetIdleAnim()           { return this.Inner.AnimInfo.GetIdleAnim(); }
+                        /*AnimSequence*/                GetJumpAnim()           { return this.Inner.AnimInfo.GetJumpAnim(); }
+                        /*AnimSequence*/                GetFallAnim()           { return this.Inner.AnimInfo.GetFallAnim(); }
+                        /*AnimSequence*/                GetLandAnim()           { return this.Inner.AnimInfo.GetLandAnim(); }
 
-                        /*NJsCPlayer.NAnim.FInfo*/       GetAnimInfo()       { return this.Inner.AnimInfo; }
+                        /*NJsCPlayer.NAnim.FInfo*/      GetAnimInfo()   { return this.Inner.AnimInfo; }
 
                         /**
                         * @param {string}       context
