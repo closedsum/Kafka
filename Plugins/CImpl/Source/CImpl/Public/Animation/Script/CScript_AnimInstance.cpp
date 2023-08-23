@@ -42,8 +42,13 @@ namespace NCScriptAnimInstance
 		{
 			// UObject Interface
 			CS_DEFINE_CACHED_FUNCTION_NAME_AS_STRING(UCScript_AnimInstance, BeginDestroy);
+			// UAnimInstance Interface
 			CS_DEFINE_CACHED_FUNCTION_NAME_AS_STRING(UCScript_AnimInstance, NativeInitializeAnimation);
 			CS_DEFINE_CACHED_FUNCTION_NAME_AS_STRING(UCScript_AnimInstance, NativeUpdateAnimation);
+			// Script
+			CS_DEFINE_CACHED_FUNCTION_NAME_AS_STRING(UCScript_AnimInstance, EnableScript);
+			CS_DEFINE_CACHED_FUNCTION_NAME_AS_STRING(UCScript_AnimInstance, DisableScript);
+			CS_DEFINE_CACHED_FUNCTION_NAME_AS_STRING(UCScript_AnimInstance, ReloadScript);
 		}
 	}
 }
@@ -56,8 +61,12 @@ UCScript_AnimInstance::UCScript_AnimInstance(const FObjectInitializer& ObjectIni
 	BoolByNameMap(),
 	IntByNameMap(),
 	FloatByNameMap(),
+	Vector3dByNameMap(),
+	Rotator3dByNameMap(),
 	SequenceByNameMap()
 {
+	ScriptInfo_bEnableHandle.Set(&ScriptInfo.bEnable);
+	ScriptInfo_bReloadHandle.Set(&ScriptInfo.bReload);
 }
 
 // UObject Interface
@@ -126,7 +135,7 @@ void UCScript_AnimInstance::NativeInitializeAnimation()
 			UCsManager_Javascript* Manager_Javascript = JavascriptManagerLibrary::GetChecked(Context, GEngine);
 
 			Manager_Javascript->EditorScriptImpl.Shutdown(this);
-			Manager_Javascript->EditorScriptImpl.CreateAndRun(this, ScriptInfo.Path);
+			ScriptId = Manager_Javascript->EditorScriptImpl.CreateAndRun(this, ScriptInfo.Path);
 		}
 	}
 #endif // #if WITH_EDITOR
@@ -140,6 +149,16 @@ void UCScript_AnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 	const FString& Context = Str::NativeUpdateAnimation;
 
 	Super::NativeUpdateAnimation(DeltaSeconds);
+	
+#if WITH_EDITOR
+	typedef NCsWorld::FLibrary WorldLibrary;
+
+	if (WorldLibrary::IsPlayInEditorPreview(GetWorld()))
+	{
+		OnTick_Handle_ScriptInfo_bEnable();
+		OnTick_Handle_ScriptInfo_bReload();
+	}
+#endif // #if WITH_EDITOR
 
 	OnNativeUpdate_ScriptEvent.Broadcast(this, DeltaSeconds);
 }
@@ -210,6 +229,103 @@ void UCScript_AnimInstance::ShutdownSingletons()
 
 #pragma endregion Manager Singleton
 
+// Script
+#pragma region
+
+void UCScript_AnimInstance::OnTick_Handle_ScriptInfo_bEnable()
+{
+	ScriptInfo_bEnableHandle.UpdateIsDirty();
+
+	if (ScriptInfo_bEnableHandle.HasChanged())
+	{
+		if (ScriptInfo.bEnable)
+		{
+			EnableScript();
+
+			ScriptInfo_bEnableHandle = true;
+		}
+		else
+		{
+			DisableScript();
+
+			ScriptInfo_bEnableHandle = false;
+		}
+		ScriptInfo_bEnableHandle.Clear();
+	}
+}
+
+void UCScript_AnimInstance::EnableScript()
+{
+	using namespace NCScriptAnimInstance::NCached;
+
+	const FString& Context = Str::EnableScript;
+
+#if WITH_EDITOR
+	if (ScriptInfo.bEnable &&
+		ScriptInfo.IsValid(Context))
+	{
+		typedef NCsJs::NManager::FLibrary JavascriptManagerLibrary;
+
+		UCsManager_Javascript* Manager_Javascript = JavascriptManagerLibrary::GetChecked(Context, GEngine);
+
+		Manager_Javascript->EditorScriptImpl.Shutdown(this);
+		ScriptId = Manager_Javascript->EditorScriptImpl.CreateAndRun(this, ScriptInfo.Path);
+	}
+#endif // #if WITH_EDITOR
+}
+
+void UCScript_AnimInstance::DisableScript()
+{
+	using namespace NCScriptAnimInstance::NCached;
+
+	const FString& Context = Str::DisableScript;
+
+#if WITH_EDITOR
+	typedef NCsJs::NManager::FLibrary JavascriptManagerLibrary;
+
+	UCsManager_Javascript* Manager_Javascript = JavascriptManagerLibrary::GetChecked(Context, GEngine);
+
+	Manager_Javascript->EditorScriptImpl.Shutdown(this);
+#endif // #if WITH_EDITOR
+}
+
+void UCScript_AnimInstance::OnTick_Handle_ScriptInfo_bReload()
+{
+	ScriptInfo_bReloadHandle.UpdateIsDirty();
+
+	if (ScriptInfo_bReloadHandle.HasChanged())
+	{
+		if (ScriptInfo.bReload)
+		{
+			ReloadScript();
+
+			ScriptInfo_bReloadHandle = false;
+			ScriptInfo_bReloadHandle.Clear();
+		}
+	}
+}
+
+void UCScript_AnimInstance::ReloadScript()
+{
+	using namespace NCScriptAnimInstance::NCached;
+
+	const FString& Context = Str::ReloadScript;
+
+#if WITH_EDITOR
+	if (ScriptInfo.bEnable &&
+		ScriptInfo.IsValid(Context))
+	{
+		typedef NCsJs::NManager::FLibrary JavascriptManagerLibrary;
+
+		UCsManager_Javascript* Manager_Javascript = JavascriptManagerLibrary::GetChecked(Context, GEngine);
+
+		Manager_Javascript->EditorScriptImpl.Reload(ScriptId, ScriptInfo.Path);
+	}
+#endif // #if WITH_EDITOR
+}
+
+#pragma endregion Script
+
 // Variables
 #pragma region
 
@@ -259,6 +375,38 @@ float UCScript_AnimInstance::GetFloatByName(const FName& Name)
 	return 0.0f;
 #endif // #if WITH_EDITOR
 	return FloatByNameMap[Name];
+}
+
+void UCScript_AnimInstance::SetVector3dByName(const FName& Name, const FVector& Value)
+{
+	Vector3dByNameMap.FindOrAdd(Name) = Value;
+}
+
+FVector UCScript_AnimInstance::GetVector3dByName(const FName& Name)
+{
+#if WITH_EDITOR
+	if (FVector* ValuePtr = Vector3dByNameMap.Find(Name))
+		return *ValuePtr;
+	UE_LOG(LogCImpl, Warning, TEXT("UCScript_AnimInstance::GetVector3dByName: No Vector3d Value associated with Name: %s."), *(Name.ToString()));
+	return FVector::ZeroVector;
+#endif // #if WITH_EDITOR
+	return Vector3dByNameMap[Name];
+}
+
+void UCScript_AnimInstance::SetRotator3dByName(const FName& Name, const FRotator& Value)
+{
+	Rotator3dByNameMap.FindOrAdd(Name) = Value;
+}
+
+FRotator UCScript_AnimInstance::GetRotator3dByName(const FName& Name)
+{
+#if WITH_EDITOR
+	if (FRotator* ValuePtr = Rotator3dByNameMap.Find(Name))
+		return *ValuePtr;
+	UE_LOG(LogCImpl, Warning, TEXT("UCScript_AnimInstance::GetVector3dByName: No Rotator3d Value associated with Name: %s."), *(Name.ToString()));
+	return FRotator::ZeroRotator;
+#endif // #if WITH_EDITOR
+	return Rotator3dByNameMap[Name];
 }
 
 void UCScript_AnimInstance::SetSequenceByName(const FName& Name, UAnimSequence* Seq)

@@ -48,6 +48,10 @@ void UCEdEngine::Init(IEngineLoop* InEngineLoop)
 	{
 		Settings->PopulateAll(ECsPlatform::Windows);
 	}
+
+	// ICsAsset_Event
+	GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OnAssetOpenedInEditor().AddUObject(this, &UCEdEngine::OnAssetOpenedInEditor);
+	GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OnAssetEditorRequestClose().AddUObject(this, &UCEdEngine::OnAssetEditorRequestClose);
 }
 
 void UCEdEngine::PreExit()
@@ -60,6 +64,24 @@ void UCEdEngine::PreExit()
 void UCEdEngine::Tick(float DeltaSeconds, bool bIdleMode)
 {
 	Super::Tick(DeltaSeconds, bIdleMode);
+
+	const int32 Count = OpenedAssets.Num();
+
+	// HACK: Capture event for when an Asset Editor is closed for an Asset
+	//		 Event OnAssetEditorRequestClose() from UAssetEditorSubsystem doesn't seem to always be called
+	//		 depending on the Editor.
+	for (int32 I = Count - 1; I >= 0; --I)
+	{
+		UObject* Asset = OpenedAssets[I];
+
+		TArray<IAssetEditorInstance*> Instances = GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->FindEditorsForAsset(Asset);
+
+		if (Instances.Num() == CS_EMPTY)
+		{
+			OnAssetEditorRequestClose(Asset, EAssetEditorCloseReason::CloseAllEditorsForAsset);
+			OpenedAssets.RemoveAt(I, 1, false);
+		}
+	}
 }
 
 #pragma endregion UEngine Interface
@@ -186,3 +208,25 @@ void UCEdEngine::BindToPrePIEEnded(UObject* Object)
 }
 
 #pragma endregion ICsBindToPrePIEEnded
+
+void UCEdEngine::OnAssetOpenedInEditor(UObject* Asset, IAssetEditorInstance* EditorInstance)
+{
+	bool AddAsset = true;
+
+	for (UObject* O : OpenedAssets)
+	{
+		if (O == Asset)
+			AddAsset = false;
+	}
+
+	if (AddAsset)
+		OpenedAssets.Add(Asset);
+}
+
+void UCEdEngine::OnAssetEditorRequestClose(UObject* Asset, EAssetEditorCloseReason Reason)
+{
+	typedef NCsAsset::NEditor::NClose::EReason ReasonType;
+
+	AssetEditor_OnRequest_Close_Event.Broadcast(Asset, (ReasonType)Reason);
+	AssetEditor_OnRequest_Close_ScriptEvent.Broadcast(Asset, (ECsAssetEditorCloseReason)Reason);
+}

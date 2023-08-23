@@ -12,6 +12,8 @@ var Types_Coroutine = require('Cs/Coroutine/Types_Coroutine.js');
 // Library
 var NJsCommon = require('Cs/Library/Library_Common.js');
 var NJsFunction = require('Cs/Library/Library_Function.js');
+// Anim
+var AnimInstanceType = require('CImpl/Player/Anim/ABP_Player_Test_01.js');
 
 // "typedefs" - classes
 /** @type {CommonLibrary} */
@@ -22,6 +24,7 @@ var checkf = CommonLibrary.checkf;
 var IsNullObject = CommonLibrary.IsNullObject;
 var IsValidObject = CommonLibrary.IsValidObject;
 var IsValidObjectChecked = CommonLibrary.IsValidObjectChecked;
+var IsClass = CommonLibrary.IsClass;
 var IsIntChecked = CommonLibrary.IsIntChecked;
 
 // Constants
@@ -52,8 +55,11 @@ function main()
     // Add hook to native Update
     Manager_Time.OnUpdate_ScriptEvent.Add(OnUpdate);
 
+    let ObjectLibrary = CsScriptLibrary_Object;
+
     // Setup Core
     Core.ScriptOuter = ScriptOuter;
+    Core.ScriptOuterId = IsValidObject(ScriptOuter) ? ObjectLibrary.Object_GetUniqueID(context, ScriptOuter) : INDEX_NONE;
     //Core.GameInstance = GameInstance;
     Core.Manager_Time = Manager_Time;
     //Core.Coordinator_GameEvent = Coordinator_GameEvent;
@@ -63,6 +69,8 @@ function main()
     //Core.PlayerController = PlayerController;
     //Core.PlayerState = PlayerState;
     //Core.PlayerPawn = PlayerPawn;
+    Core.Script.Index = Manager_Javascript.CurrentEditorScriptIndex;
+    Core.Script.Id    = Manager_Javascript.CurrentEditorScriptId;
 
     Core.Init();
     CompileClasses();
@@ -74,12 +82,25 @@ function main()
         // Bind to startup related events
 
         // Bind to shutdown related events
+    Manager_Javascript.EditorScript_OnShutdown_ScriptEvent.Add(OnShutdown);
+
     let ac = CScript_AnimInstance.C(Core.GetScriptOuter());
     ac.OnBeginDestroy_ScriptEvent.Add(OnBeginDestroy);
 
-    let edEngine = CsEdEngine.C(GEngine);
+    let edEngine = CEdEngine.C(GEngine);
     if (edEngine !== null)
+    {
         edEngine.AnimationEvent_OnInit_ScriptEvent.Add(AnimationEvent_OnInit);
+        edEngine.AssetEditor_OnRequest_Close_ScriptEvent.Add(AssetEditor_OnRequest_Close);
+    }
+
+    // AnimInstance
+    {
+        let ai = new AnimInstanceType();
+        ai.Init(Core, ac);
+
+        Core.GetScript().AddObject(ai);
+    }
 }
 
 main();
@@ -107,23 +128,26 @@ function AnimationEvent_OnInit(animInstance)
     let context = FileShortName + ".AnimationEvent_OnInit";
     console.log(context);
     
-    if (IsValidObject(Core))
-    {
-        let ObjectLibrary = CsScriptLibrary_Object;
+    CheckAndTryShutdown(context, animInstance);
+}
 
-        if (ObjectLibrary.IsNullOrPendingKill(Core.GetScriptOuter()))
-        {
-            Shutdown();
-        }
-        else
-        {
-            let ida = ObjectLibrary.DOb_GetUniqueID(context, Core.GetScriptOuter());
-            let idb = ObjectLibrary.DOb_GetUniqueID(context, animInstance);
+function AssetEditor_OnRequest_Close(asset, reason)
+{
+    let context = FileShortName + ".AssetEditor_OnRequest_Close";
+    console.log(context);
 
-            if (ida === idb)
-            {
-                Shutdown();
-            }
+    let bp = Blueprint.C(asset);
+
+    if (IsValidObject(bp))
+    {  
+        let BlueprintLibrary = CsScriptLibrary_Blueprint;
+
+        let bgc = BlueprintLibrary.GetGeneratedClass(context, bp);
+
+        if (IsClass(bgc) &&
+            IsValidObject(bgc.GetDefaultObject()))
+        {
+            CheckAndTryShutdown(context, bgc.GetDefaultObject());
         }
     }
 }
@@ -133,6 +157,11 @@ function OnBeginDestroy(animInstance)
     let context = FileShortName + ".OnBeginDestroy";
     console.log(context);
     
+    CheckAndTryShutdown(context, animInstance);
+}
+
+function CheckAndTryShutdown(context, o)
+{
     if (IsValidObject(Core))
     {
         let ObjectLibrary = CsScriptLibrary_Object;
@@ -144,7 +173,7 @@ function OnBeginDestroy(animInstance)
         else
         {
             let ida = ObjectLibrary.DOb_GetUniqueID(context, Core.GetScriptOuter());
-            let idb = ObjectLibrary.DOb_GetUniqueID(context, animInstance);
+            let idb = ObjectLibrary.DOb_GetUniqueID(context, o);
 
             if (ida === idb)
             {
@@ -154,9 +183,16 @@ function OnBeginDestroy(animInstance)
     }
 }
 
-function OnShutdown()
+function OnShutdown(id)
 {
-    Shutdown();
+    let context = FileShortName + ".OnShutdown";
+    console.log(context);
+
+    if (IsValidObject(Core) &&
+        Guid.EqualEqual_GuidGuid(Core.GetScript().GetId(), id))
+    {        
+        Shutdown();
+    }
 }
 
 function Shutdown()
@@ -166,6 +202,9 @@ function Shutdown()
     if (Manager_Time !== null)
         Manager_Time.OnUpdate_ScriptEvent.Remove(OnUpdate);
 
+    if (Manager_Javascript !== null)
+        Manager_Javascript.EditorScript_OnShutdown_ScriptEvent.Remove(OnShutdown);
+
     let ObjectLibrary = CsScriptLibrary_Object;
 
     let ac = Core.GetScriptOuter();
@@ -173,9 +212,12 @@ function Shutdown()
     if (!ObjectLibrary.IsNullOrPendingKill(ac))
         ac.OnBeginDestroy_ScriptEvent.Remove(OnBeginDestroy);
 
-    let edEngine = CsEdEngine.C(GEngine);
+    let edEngine = CEdEngine.C(GEngine);
     if (edEngine !== null)
+    {
         edEngine.AnimationEvent_OnInit_ScriptEvent.Remove(AnimationEvent_OnInit);
+        edEngine.AssetEditor_OnRequest_Close_ScriptEvent.Remove(AssetEditor_OnRequest_Close);
+    }
 
     Core.Shutdown();
     Core = null;
@@ -185,21 +227,3 @@ function CleanUp()
 {
     console.log("Clean Up");
 }
-
-// bootstrap to initiate live-reloading dev env.
-/*
-try {
-    module.exports = () => {
-        let cleanup = null
-
-        // wait for map to be loaded.
-        process.nextTick(() => cleanup = main());
-
-        // live-reloadable function should return its cleanup function
-        return () => cleanup()
-    }
-}
-catch (e) {
-    require('bootstrap')('Mbo/EntryPoint_Game')
-}
-*/

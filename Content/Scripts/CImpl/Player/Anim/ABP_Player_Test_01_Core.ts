@@ -3,6 +3,6 @@
 
 // require('Player/Anim/ABP_Player_Test_01_Core.js');
 
-declare class FJsCABP_Player_TEst_01_Core extends FJsCore {
+declare class FJsCABP_Player_Test_01_Core extends FJsCore {
     Shutdown(): void;
 }

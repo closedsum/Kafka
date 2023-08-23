@@ -25,12 +25,16 @@ struct CIMPL_API FCScriptAnimInstance_ScriptInfo
 	bool bEnable;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CImpl|Anim|Instance|Script")
+	bool bReload;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CImpl|Anim|Instance|Script")
 	FString Path;
 
 public:
 
 	FCScriptAnimInstance_ScriptInfo() :
 		bEnable(false),
+		bReload(false),
 		Path()
 	{
 	}
@@ -113,15 +117,44 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Script")
 	FCScriptAnimInstance_ScriptInfo ScriptInfo;
 
+private:
+
+	FGuid ScriptId;
+
+	TCsBool_Ref ScriptInfo_bEnableHandle;
+
+	void OnTick_Handle_ScriptInfo_bEnable();
+
+	void EnableScript();
+	void DisableScript();
+
+	TCsBool_Ref ScriptInfo_bReloadHandle;
+
+	void OnTick_Handle_ScriptInfo_bReload();
+
+	void ReloadScript();
+
 #pragma endregion Script
 
 // Variables
 #pragma region
-private:
+public:
 	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
 	TMap<FName, bool> BoolByNameMap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
 	TMap<FName, int32> IntByNameMap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables")
 	TMap<FName, float> FloatByNameMap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables", meta = (DisplayName = "Vector3d by Name Map"))
+	TMap<FName, FVector> Vector3dByNameMap;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Variables", meta = (DisplayName = "Rotator3d by Name Map"))
+	TMap<FName, FRotator> Rotator3dByNameMap;
+
 	TMap<FName, UAnimSequence*> SequenceByNameMap;
 
 public:
@@ -143,6 +176,18 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "CImpl|Anim|Instance|Script", meta = (BlueprintThreadSafe, AutoCreateRefTerm = "Name"))
 	float GetFloatByName(const FName& Name);
+
+	UFUNCTION(BlueprintCallable, Category = "CImpl|Anim|Instance|Script", meta = (DisplayName = "Set Vector3d by Name", AutoCreateRefTerm = "Name,Value"))
+	void SetVector3dByName(const FName& Name, const FVector& Value);
+
+	UFUNCTION(BlueprintPure, Category = "CImpl|Anim|Instance|Script", meta = (DisplayName = "Get Vector3d by Name", BlueprintThreadSafe, AutoCreateRefTerm = "Name"))
+	FVector GetVector3dByName(const FName& Name);
+
+	UFUNCTION(BlueprintCallable, Category = "CImpl|Anim|Instance|Script", meta = (DisplayName = "Set Rotator3d by Name", AutoCreateRefTerm = "Name,Value"))
+	void SetRotator3dByName(const FName& Name, const FRotator& Value);
+
+	UFUNCTION(BlueprintPure, Category = "CImpl|Anim|Instance|Script", meta = (DisplayName = "Get Rotator3d by Name", BlueprintThreadSafe, AutoCreateRefTerm = "Name"))
+	FRotator GetRotator3dByName(const FName& Name);
 
 	UFUNCTION(BlueprintCallable, Category = "CImpl|Anim|Instance|Script", meta = (AutoCreateRefTerm = "Name"))
 	void SetSequenceByName(const FName& Name, UAnimSequence* Seq);

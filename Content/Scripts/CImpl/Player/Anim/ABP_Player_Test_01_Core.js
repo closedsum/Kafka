@@ -23,7 +23,7 @@ var FunctionLibrary = NJsFunction.FLibrary;
 var check = CommonLibrary.check;
 var IsValidObject = CommonLibrary.IsValidObject;
 
-module.exports = class FJsCABP_Player_TEst_01_Core extends FJsCore
+module.exports = class FJsCABP_Player_Test_01_Core extends FJsCore
 {
     constructor()
     {
