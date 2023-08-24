@@ -21,21 +21,37 @@ struct CIMPL_API FCScriptAnimInstance_ScriptInfo
 {
 	GENERATED_USTRUCT_BODY()
 
+	/** Whether the Script at Entry Path should Run or not. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CImpl|Anim|Instance|Script")
 	bool bEnable;
 
+	/** Whether or not to Reload the Script at Entry Path.
+		NOTE: 
+		- This is only used for Editor Preview.
+		- bEnable must be TRUE. 
+		- EntryPath must be VALID (NOT empty)*/
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CImpl|Anim|Instance|Script")
 	bool bReload;
 
+	/** The 'Entry' point (aka starting file) to Run.
+		This should be a starting Script file for Editor Preview. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CImpl|Anim|Instance|Script")
-	FString Path;
+	FString EntryPath;
+
+	/** The Script file associated to the Script Class that will controlling (via a wrapper)
+		the AnimInstance. 
+		NOTE: This will be used after the AnimInstance is set and another script uses the
+			  ClassPath to instantiate the wrapper to "control" the AnimInstance. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "CImpl|Anim|Instance|Script")
+	FString ClassPath;
 
 public:
 
 	FCScriptAnimInstance_ScriptInfo() :
 		bEnable(false),
 		bReload(false),
-		Path()
+		EntryPath(),
+		ClassPath()
 	{
 	}
 
@@ -116,6 +132,12 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Script")
 	FCScriptAnimInstance_ScriptInfo ScriptInfo;
+
+	UFUNCTION(BlueprintCallable, meta = (AutoCreateRefTerm = "Context"))
+	bool ScriptInfo_IsValid(const FString& Context) const
+	{
+		return ScriptInfo.IsValid(Context);
+	}
 
 private:
 

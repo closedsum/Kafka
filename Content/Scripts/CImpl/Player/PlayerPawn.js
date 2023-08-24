@@ -58,7 +58,8 @@ module.exports = class NJsCPlayer
             StartMoveRight:     GameEventLibrary.Get("StartMoveRight"),
             StopMoveRight:      GameEventLibrary.Get("StopMoveRight"),
             LookUpDown:         GameEventLibrary.Get("LookUpDown"),
-            LookLeftRight:      GameEventLibrary.Get("LookLeftRight")
+            LookLeftRight:      GameEventLibrary.Get("LookLeftRight"),
+            StartJump:          GameEventLibrary.Get("StartJump")
         }
 
         static EDirection = 
@@ -91,6 +92,9 @@ module.exports = class NJsCPlayer
 
             /** @type {CsGameEventInfo[]} */ this.QueuedMoveEvents = [];
 
+            // Anim
+
+            /** */ this.AnimInstanceWrapper = null;
         }
 
         FirstInit()
@@ -168,6 +172,12 @@ module.exports = class NJsCPlayer
 
         Shutdown()
         {
+            if (IsValidObject(this.AnimInstanceWrapper))
+            {
+                this.AnimInstanceWrapper.Shutdown();
+                this.AnimInstanceWrapper = null;
+            }
+
             if (IsValidObject(Core))
             {
                 Core.GetGameState().OnUpdate_ScriptEvent.Remove(ClassType.Update);
@@ -272,6 +282,19 @@ module.exports = class NJsCPlayer
                 let info = this.AnimSetData.GetAnimInfo();
 
                 this.Ptr.Mesh.SetAnimClass(info.GetAnimClass());
+
+                /** @type {CScript_AnimInstance} */
+                let ai = this.Ptr.Mesh.GetAnimInstance();
+
+                if (ai.ScriptInfo.bEnable &&
+                    ai.ScriptInfo_IsValid(context))
+                {
+                    var AnimInstanceType = require(ai.ScriptInfo.ClassPath);
+                    // TODO: Add check
+                    this.AnimInstanceWrapper = new this.AnimInstanceType();
+                    this.AnimInstanceWrapper.SetData(this.AnimSetData);
+                    this.AnimInstanceWrapper.Init(Core, ai);
+                }
             }
 
             // Teleport to start location
@@ -329,6 +352,19 @@ module.exports = class NJsCPlayer
                 Evt_EqEq(event, GameEventType.StopMoveRight))
             {
                 this.QueuedMoveEvents.push(info);
+            }
+
+                // Jump
+                
+                // NOTE: For now "Resolve" immediately
+            
+            if (Evt_EqEq(event, GameEventType.StartJump))
+            {
+                if (this.Ptr.CanJump())
+                {
+                    this.Ptr.Jump();
+                    this.StopJump();
+                }
             }
         }
 
@@ -495,6 +531,44 @@ module.exports = class NJsCPlayer
             }
 
             this.QueuedMoveEvents = [];
+        }
+
+        StopJump()
+        {
+            let context = ClassName + ".StopJump";
+
+            let scheduler = Core.GetCoroutineScheduler();
+    
+            let UpdateGroupLibrary = CsScriptLibrary_UpdateGroup;
+        
+            let group   = UpdateGroupLibrary.Get("GameState");
+            let payload = scheduler.AllocatePayload(group);
+        
+            let func = this.StopJump_Internal();
+            payload.CoroutineImpl = func;
+            payload.StartTime.Time = 0.0;
+            payload.Owner.SetObject(this.Ptr);
+
+            this.StopJumpHandle = scheduler.Start(payload);
+        }
+
+        * StopJump_Internal()
+        {
+            let context = ClassName + ".StopJump_Internal";
+
+            let r;
+
+            // COROUTINE BEGIN
+            r = yield;
+
+            // Wait 1 Frame
+            r = yield;
+
+            this.Ptr.StopJumping();
+
+            // COROUTINE END
+            r.EndOfExecution();
+            return;
         }
     }
 };

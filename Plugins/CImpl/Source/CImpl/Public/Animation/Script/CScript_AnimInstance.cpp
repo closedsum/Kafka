@@ -29,7 +29,7 @@ bool FCScriptAnimInstance_ScriptInfo::IsValid(const FString& Context, void(*Log)
 {
 	if (bEnable)
 	{
-		CS_IS_STRING_EMPTY(Path)
+		CS_IS_STRING_EMPTY(EntryPath)
 	}
 	return true;
 }
@@ -136,7 +136,7 @@ void UCScript_AnimInstance::NativeInitializeAnimation()
 			UCsManager_Javascript* Manager_Javascript = JavascriptManagerLibrary::GetChecked(Context, GEngine);
 
 			Manager_Javascript->EditorScriptImpl.Shutdown(this);
-			ScriptId = Manager_Javascript->EditorScriptImpl.CreateAndRun(this, ScriptInfo.Path);
+			ScriptId = Manager_Javascript->EditorScriptImpl.CreateAndRun(this, ScriptInfo.EntryPath);
 		}
 	}
 #endif // #if WITH_EDITOR
@@ -270,7 +270,7 @@ void UCScript_AnimInstance::EnableScript()
 		UCsManager_Javascript* Manager_Javascript = JavascriptManagerLibrary::GetChecked(Context, GEngine);
 
 		Manager_Javascript->EditorScriptImpl.Shutdown(this);
-		ScriptId = Manager_Javascript->EditorScriptImpl.CreateAndRun(this, ScriptInfo.Path);
+		ScriptId = Manager_Javascript->EditorScriptImpl.CreateAndRun(this, ScriptInfo.EntryPath);
 	}
 #endif // #if WITH_EDITOR
 }

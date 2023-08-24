@@ -100,6 +100,8 @@ function main()
         edEngine.AssetEditor_OnRequest_Close_ScriptEvent.Add(AssetEditor_OnRequest_Close);
     }
 
+    // TODO: Check World to see if the AnimInstance sould be found from the Player;
+
     // AnimInstance
     {
         let ai = new AnimInstanceType();
