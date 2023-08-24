@@ -60,8 +60,6 @@ Binaries/
 Intermediate/
 Resources/
 DerivedDataCache/
-Content/*
-!Content/Scripts/
 Content/Scripts/typings
 Content/Scripts/Cs
 Plugins/*
