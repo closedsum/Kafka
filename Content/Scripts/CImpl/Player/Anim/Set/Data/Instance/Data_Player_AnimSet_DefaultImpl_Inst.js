@@ -46,7 +46,8 @@ module.exports = class NJsCPlayer
                                 {
                                     let info = inner.AnimInfo;
 
-                                    info.AnimBlueprint.Path = '/Game/Characters/Mannequins/Animations/ABP_Quinn.ABP_Quinn';
+                                    //info.AnimBlueprint.Path = '/Game/Characters/Mannequins/Animations/ABP_Quinn.ABP_Quinn';
+                                    info.AnimBlueprint.Path = '/Game/Core/Player/Anim/ABP_Player_Test_01.ABP_Player_Test_01';
                                     info.WalkRunBlendSpace.Path = '/Game/Characters/Mannequins/Animations/Manny/BS_MM_WalkRun.BS_MM_WalkRun';
                                     info.IdleAnim.Path = '/Game/Characters/Mannequins/Animations/Manny/MM_Idle.MM_Idle';
                                     info.JumpAnim.Path = '/Game/Characters/Mannequins/Animations/Manny/MM_Jump.MM_Jump';

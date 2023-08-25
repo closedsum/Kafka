@@ -320,7 +320,7 @@ void UCScript_AnimInstance::ReloadScript()
 
 		UCsManager_Javascript* Manager_Javascript = JavascriptManagerLibrary::GetChecked(Context, GEngine);
 
-		Manager_Javascript->EditorScriptImpl.Reload(ScriptId, ScriptInfo.Path);
+		Manager_Javascript->EditorScriptImpl.Reload(ScriptId, ScriptInfo.EntryPath);
 	}
 #endif // #if WITH_EDITOR
 }

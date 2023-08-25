@@ -42,7 +42,7 @@ module.exports = class NJsCPlayer
                             let info = inner.OrientationInfo;
 
                             info.bUseControllerRotationPitch = false;
-                            info.bUseControllerRotationYaw = false;
+                            info.bUseControllerRotationYaw = true;
                             info.bUseControllerRotationRoll = false;
                         }
                         // Movement
@@ -60,6 +60,8 @@ module.exports = class NJsCPlayer
                             info.MaxAcceleration = 1500.0;
                             info.BrakingFrictionFactor = 1.0;
                             info.bUseSeparateBrakingFriction = true;
+
+                            info.RunSpeed = 1000.0;
                         }
                         // Camera
                         {

@@ -9,9 +9,6 @@ var FJsCore = require("Cs/Core.js");
 // Library
 var NJsCommon = require('Cs/Library/Library_Common.js');
 var NJsFunction = require('Cs/Library/Library_Function.js');
-// Player
-/** @type{NJsCPlayer.FPawn} */
-var PlayerPawnType = require('CImpl/Player/PlayerPawn.js');
 
 // "typedefs" - class
 /** @type {CommonLibrary} */

@@ -39,6 +39,12 @@ module.exports = class FJsCABP_Player_Test_01
     {
         /** @type {CScript_AnimInstance} */this.Ptr = null;
 
+    // Owner
+
+        /** @type {Character} */ this.OwnerAsCharacter = null;
+
+    // Data
+
         /** */ this.Data = null;
 
         /** @type {Vector} */   this.Velocity = new Vector({X: 0.0, Y: 0.0, Z: 0.0});
@@ -73,6 +79,11 @@ module.exports = class FJsCABP_Player_Test_01
         // Bind to events
         this.Ptr.OnNativeUpdate_ScriptEvent.Add(ClassType.NativeUpdate);
 
+        // Owner
+        let p                 = this.Ptr.TryGetPawnOwner();
+        this.OwnerAsCharacter = Character.C(p);
+
+        // Apply Data
         this.Ptr.SetBlendSpace1DByName('WalkRunBlendSpace', this.Data.GetWalkRunBlendSpace());
         this.Ptr.SetSequenceByName('IdleAnim', this.Data.GetIdleAnim());
         this.Ptr.SetSequenceByName('JumpAnim', this.Data.GetJumpAnim());
@@ -104,6 +115,26 @@ module.exports = class FJsCABP_Player_Test_01
 
     NativeUpdate_Internal(deltaSeconds /*number*/)
     {
+        /** @type {CharacterMovementComponent} */
+        let mc = this.OwnerAsCharacter.GetMovementComponent();
+
+        // Velocity
+        this.Velocity = mc.Velocity;
+        this.GroundSpeed = Vector.VSizeXY(this.Velocity);
+
+        this.Ptr.SetFloatByName('GroundSpeed', this.GroundSpeed);
+
+        // bMove
+        const GROUND_SPEED_THRESHOLD = 3.0;
+
+        let a = mc.GetCurrentAcceleration();
+
+        this.bMove = (this.GroundSpeed > GROUND_SPEED_THRESHOLD) && Vector.NotEqual_VectorVector(a, this.Velocity, 0.0);
+        this.Ptr.SetBoolByName('bMove', this.bMove);
+
+        // bFalling
+        this.bFalling = mc.IsFalling();
+        this.Ptr.SetBoolByName('bFalling', this.bFalling);
     }
 
     NativeUpdate_Internal_PlayInEditorPreview(deltaSeconds /*number*/)

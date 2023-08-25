@@ -161,7 +161,6 @@ function AnimationEvent_OnInit(animInstance)
 function AssetEditor_OnRequest_Close(asset, reason)
 {
     let context = FileShortName + ".AssetEditor_OnRequest_Close";
-    console.log(context);
 
     let bp = Blueprint.C(asset);
 
@@ -174,8 +173,14 @@ function AssetEditor_OnRequest_Close(asset, reason)
         if (IsClass(bgc) &&
             IsValidObject(bgc.GetDefaultObject()))
         {
+            console.log(context);
             CheckAndTryShutdown(context, bgc.GetDefaultObject());
         }
+    }
+    else
+    {
+        console.log(context);
+        CheckAndTryShutdown(context, asset);
     }
 }
 
@@ -193,10 +198,13 @@ function CheckAndTryShutdown(context, o)
     {
         let ObjectLibrary = CsScriptLibrary_Object;
 
+        // Outer is INVALID
         if (ObjectLibrary.IsNullOrPendingKill(Core.GetScriptOuter()))
         {
             Shutdown();
+            return true;
         }
+        // UniqueID match with 'o'
         else
         {
             let ida = ObjectLibrary.DOb_GetUniqueID(context, Core.GetScriptOuter());
@@ -205,9 +213,11 @@ function CheckAndTryShutdown(context, o)
             if (ida === idb)
             {
                 Shutdown();
+                return true;
             }
         }
     }
+    return false;
 }
 
 function OnShutdown(id)

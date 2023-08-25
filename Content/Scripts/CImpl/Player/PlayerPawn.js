@@ -109,6 +109,9 @@ module.exports = class NJsCPlayer
                 // Create a camera boom (pulls in towards the player if there is a collision)
                 this.CameraBoom = ComponentLibrary.CreateAndRegister_SpringArmComponent(context, this.Ptr, "CameraBoom");
                 IsValidObjectChecked(context, this.CameraBoom);
+                let tags = this.CameraBoom.ComponentTags;
+                tags.push('CameraBoom');
+                this.CameraBoom.ComponentTags = tags;
                 this.CameraBoom.K2_AttachToComponent(this.Ptr.RootComponent);
                 // The camera follows at this distance behind the character	
                 this.CameraBoom.TargetArmLength = 400.0;
@@ -119,6 +122,9 @@ module.exports = class NJsCPlayer
             {
                 this.FollowCamera = ComponentLibrary.CreateAndRegister_CameraComponent(context, this.Ptr, "FollowCamera");
                 IsValidObjectChecked(context, this.CameraBoom);
+                let tags = this.FollowCamera.ComponentTags;
+                tags.push('FollowCamera');
+                this.FollowCamera.ComponentTags = tags;
                 // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
                 this.FollowCamera.K2_AttachToComponent(this.CameraBoom, "SpringEndpoint");
                 // Camera does not rotate relative to arm
@@ -291,7 +297,7 @@ module.exports = class NJsCPlayer
                 {
                     var AnimInstanceType = require(ai.ScriptInfo.ClassPath);
                     // TODO: Add check
-                    this.AnimInstanceWrapper = new this.AnimInstanceType();
+                    this.AnimInstanceWrapper = new AnimInstanceType();
                     this.AnimInstanceWrapper.SetData(this.AnimSetData);
                     this.AnimInstanceWrapper.Init(Core, ai);
                 }

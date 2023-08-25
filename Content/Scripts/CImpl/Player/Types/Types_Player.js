@@ -78,6 +78,8 @@ module.exports = class NJsCPlayer
                 /** @type {number} */ this.MaxAcceleration = 1500.0;
                 /** @type {number} */ this.BrakingFrictionFactor = 1.0;
                 /** @type {boolean} */ this.bUseSeparateBrakingFriction = true;
+
+                /** @type {number} */ this.RunSpeed = 1000.0;
             }
 
             /*boolean*/ ShouldOrientRotationToMovement()    { return this.bOrientRotationToMovement; }
@@ -91,6 +93,8 @@ module.exports = class NJsCPlayer
             /*number*/  GetMaxAcceleration()                { return this.MaxAcceleration; }
             /*number*/  GetBrakingFrictionFactor()          { return this.BrakingFrictionFactor; }
             /*number*/  UseSeparateBrakingFriction()        { return this.bUseSeparateBrakingFriction; }
+
+            /*number*/  GetRunSpeed()                       { return this.RunSpeed; }
 
             /**
              * @param {string}      context 
