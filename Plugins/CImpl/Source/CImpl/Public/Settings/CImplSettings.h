@@ -3,7 +3,7 @@
 
 #include "Engine/DeveloperSettings.h"
 // Types
-#include "Settings/CsTypes_Settings.h"
+#include "Settings/CsTypes_Settings_Enum.h"
 #include "Settings/CTypes_ImplSettings.h"
 #include "Managers/Input/Action/CsInputActionMap.h"
 // GameEvent
