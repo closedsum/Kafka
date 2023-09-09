@@ -3,14 +3,11 @@
 #include "CImpl.h"
 
 // Library
-#include "Data/CLibrary_DataRootSet.h"
 #include "Data/CsLibrary_Data.h"
 // Utility
 #include "Utility/CLog.h"
-#include "Utility/CsPopulateEnumMapFromSettings.h"
 #include "Utility/CPopulateEnumMapFromSettings.h"
 // Data
-#include "Data/CGetDataRootSet.h"
 #include "Game/Play/Data/CData_GamePlay.h"
 
 // GamePlay
@@ -18,19 +15,34 @@
 
 namespace NCGamePlay
 {
-	namespace Str
+	namespace NCached
 	{
-		const FString GamePlay = TEXT("GamePlay");
+		namespace Str
+		{
+			const FString GamePlay = TEXT("GamePlay");
+		}
+
+		namespace Name
+		{
+			const FName GamePlays = FName("GamePlays");
+		}
 	}
 
 	void FromDataTable(const FString& Context, UObject* ContextRoot)
 	{
-		const FCDataRootSet* DataRootSet = FCPopulateEnumMapFromSettings::GetDataRootSet(Context, ContextRoot);
+		using namespace NCGamePlay::NCached;
 
-		if (!DataRootSet)
-			return;
+		typedef FCPopulateEnumMapFromSettings::FFromDataTable::FPayload PayloadType;
 
-		FCsPopulateEnumMapFromSettings::FromDataTable<EMCGamePlay>(Context, ContextRoot, DataRootSet->GamePlays, Str::GamePlay, &FCLog::Warning);
+		PayloadType Payload;
+		Payload.ContextRoot				 = ContextRoot;
+		Payload.DataTableName			 = Name::GamePlays;
+		Payload.EnumName				 = Str::GamePlay;
+		Payload.Create					 = &Create;
+		Payload.CreateCustom			 = &CreateCustom;
+		Payload.IsValidEnum				 = &IsValidEnum;
+		Payload.IsValidEnumByDisplayName = &IsValidEnumByDisplayName;
+		Payload.Log						 = &FCLog::Warning;
 	}
 
 	void PopulateEnumMapFromSettings(const FString& Context, UObject* ContextRoot)

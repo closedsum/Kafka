@@ -38,6 +38,11 @@ namespace NCDataRootSet
 			//CS_DEFINE_CACHED_STRING(FXCustomScriptClasses, "FXCustomScriptClasses");
 			//CS_DEFINE_CACHED_STRING(FXCustomScripts, "FXCustomScripts");
 		}
+
+		namespace Name
+		{
+			CS_DEFINE_CACHED_NAME(GamePlays, "GamePlays");
+		}
 	}
 }
 
@@ -96,6 +101,17 @@ void FCDataRootSet_Sound::MuteChecked(const FString& Context, const UObject* Wor
 #undef ClassType
 
 #pragma endregion FCDataRootSet_Sound
+
+#define MemberType FCDataRootSet::EMember
+MemberType FCDataRootSet::GetMember(const FName& MemberName)
+{
+	using namespace NCDataRootSet::NCached;
+
+	if (MemberName == Name::GamePlays)
+		return MemberType::GamePlays;
+	return MemberType::GamePlays;
+}
+#undef MemberType
 
 bool FCDataRootSet::IsValidChecked(const FString& Context, const UObject* WorldContext, const EMember& MemberType) const
 {

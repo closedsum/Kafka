@@ -130,9 +130,16 @@ public:
 		//FXCustomScripts,
 	};
 
+	static EMember GetMember(const FName& MemberName);
+
 	bool IsValidChecked(const FString& Context, const UObject* WorldContext, const EMember& MemberType) const;
 
 	const TSoftObjectPtr<UDataTable>& GetDataTableSoftObjectChecked(const FString& Context, const EMember& MemberType) const;
+
+	FORCEINLINE const TSoftObjectPtr<UDataTable>& GetDataTableSoftObjectChecked(const FString& Context, const FName& MemberName) const
+	{
+		return GetDataTableSoftObjectChecked(Context, FCDataRootSet::GetMember(MemberName));
+	}
 
 	bool GetSafeDataTableSoftObject(const FString& Context, const EMember& MemberType, TSoftObjectPtr<UDataTable>& OutSoftObject, void(*Log)(const FString&) = &FCLog::Warning) const;
 
