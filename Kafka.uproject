@@ -31,6 +31,10 @@
 			"Enabled": true
 		},
 		{
+			"Name": "CsSkin",
+			"Enabled": true
+		},
+		{
 			"Name": "CImpl",
 			"Enabled": true
 		},

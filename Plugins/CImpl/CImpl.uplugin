@@ -37,6 +37,10 @@
     {
       "Name": "CsDamage",
       "Enabled": true
+    },
+    {
+      "Name": "CsSkin",
+      "Enabled": true
     }
   ]
 }

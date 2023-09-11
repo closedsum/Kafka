@@ -27,6 +27,7 @@ public class CImpl : ModuleRules
                     "CsCore",
                     "CsJs",
                     "CsDmg",
+                    "CsSkin"
                 }
             );
 
